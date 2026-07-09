@@ -74,14 +74,14 @@ export function Topbar() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link href="/settings" />}>
+            <DropdownMenuItem onClick={() => router.push("/settings")}>
               Profile Settings
             </DropdownMenuItem>
-            <DropdownMenuItem render={<Link href="/settings" />}>
+            <DropdownMenuItem onClick={() => router.push("/settings")}>
               Billing
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive w-full cursor-pointer" render={<div onClick={handleLogout} />}>
+            <DropdownMenuItem className="text-destructive w-full cursor-pointer" onClick={(e) => handleLogout()}>
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
