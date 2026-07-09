@@ -23,6 +23,7 @@ export default function SettingsPage() {
   };
 
   const handleConnectGmail = () => {
+    console.log("Connect Gmail button clicked");
     window.location.href = "/api/gmail/auth";
   };
 
@@ -111,7 +112,9 @@ export default function SettingsPage() {
                     <p className="text-xs text-muted-foreground">Not connected</p>
                   </div>
                 </div>
-                <Button onClick={handleConnectGmail}>Connect</Button>
+                <Button asChild>
+                  <a href="/api/gmail/auth">Connect</a>
+                </Button>
               </div>
             </CardContent>
           </Card>

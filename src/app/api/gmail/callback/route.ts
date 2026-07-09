@@ -32,11 +32,11 @@ export async function GET(request: NextRequest) {
     
     // Save to Firestore
     if (tokens.refresh_token) {
-      await adminDb.collection("users").doc(decodedClaims.sub).update({
+      await adminDb.collection("users").doc(decodedClaims.sub).set({
         gmailRefreshToken: tokens.refresh_token,
         gmailConnected: true,
         updatedAt: new Date().toISOString()
-      });
+      }, { merge: true });
     }
 
     return NextResponse.redirect(new URL("/settings?success=gmail_connected", request.url));
