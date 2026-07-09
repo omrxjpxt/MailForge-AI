@@ -21,8 +21,10 @@ function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
-function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
-  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
+import { Slot } from "@radix-ui/react-slot"
+
+function TooltipTrigger({ asChild, ...props }: TooltipPrimitive.Trigger.Props & { asChild?: boolean }) {
+  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" render={asChild ? <Slot /> : undefined} {...props} />
 }
 
 function TooltipContent({

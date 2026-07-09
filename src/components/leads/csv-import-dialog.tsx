@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Upload, FileType, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, FileType, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
 import Papa from "papaparse";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";

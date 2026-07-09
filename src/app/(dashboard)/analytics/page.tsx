@@ -115,7 +115,7 @@ function FunnelStep({ label, count, percentage, color }: any) {
         </div>
       </div>
       <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full`} style={{ width: \`\${percentage}%\` }} />
+        <div className={`h-full ${color} rounded-full`} style={{ width: `${percentage}%` }} />
       </div>
     </div>
   );

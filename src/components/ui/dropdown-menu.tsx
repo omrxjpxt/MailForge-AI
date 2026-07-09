@@ -14,8 +14,10 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
 }
 
-function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
-  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
+import { Slot } from "@radix-ui/react-slot"
+
+function DropdownMenuTrigger({ asChild, ...props }: MenuPrimitive.Trigger.Props & { asChild?: boolean }) {
+  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" render={asChild ? <Slot /> : undefined} {...props} />
 }
 
 function DropdownMenuContent({
