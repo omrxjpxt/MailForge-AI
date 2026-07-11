@@ -83,7 +83,7 @@ export default function NewCampaignPage() {
       }
     };
     fetchTemplates();
-  }, [user]);
+  }, [user, authLoading]);
 
   const handleNext = () => {
     if (step === 1) {
