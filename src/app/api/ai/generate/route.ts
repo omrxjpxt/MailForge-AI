@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
 import { adminAuth } from "@/lib/firebase/admin";
-
-// Initialize Gemini API
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
-});
+import { generateWithFallback } from "@/lib/ai/model";
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,14 +36,10 @@ Rules:
 - Use placeholders like {{firstName}} or {{companyName}} for personalization.
 - Do NOT include a subject line in the main output, just the body.`;
 
-    // 4. Generate content using Gemini 2.5 Pro or Flash
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction,
-        temperature: 0.7,
-      }
+    // 4. Generate content using the best available model
+    const response = await generateWithFallback(prompt, {
+      systemInstruction,
+      temperature: 0.7,
     });
 
     return NextResponse.json({ 

@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { Type, Schema } from "@google/genai";
 import { adminAuth } from "@/lib/firebase/admin";
-
-// Initialize Gemini API
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
-});
+import { generateWithFallback } from "@/lib/ai/model";
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,15 +70,11 @@ Rules:
     };
 
     // 4. Generate content using Gemini
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: prompt,
-      config: {
-        systemInstruction,
-        temperature: 0.7,
-        responseMimeType: "application/json",
-        responseSchema,
-      }
+    const response = await generateWithFallback(prompt, {
+      systemInstruction,
+      temperature: 0.7,
+      responseMimeType: "application/json",
+      responseSchema,
     });
 
     if (!response.text) {
