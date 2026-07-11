@@ -40,6 +40,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line
     if (template) {
       setFormData({
         name: template.name,
@@ -117,8 +118,8 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
       
       toast.success("Template generated!");
       setShowAIPrompt(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Generation failed");
     } finally {
       setIsGenerating(false);
     }
@@ -140,8 +141,8 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
         toast.success("Template created");
       }
       onClose();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save template");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save template");
     } finally {
       setIsSaving(false);
     }

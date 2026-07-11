@@ -1,68 +1,81 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Filter, X, TrendingUp } from "lucide-react";
+import { LeadStatusEnum } from "@/types/lead";
 
-export function LeadFilters() {
+interface LeadFiltersProps {
+  searchQuery: string;
+  setSearchQuery: (val: string) => void;
+  statusFilter: string;
+  setStatusFilter: (val: string) => void;
+  industryFilter: string;
+  setIndustryFilter: (val: string) => void;
+  sourceFilter: string;
+  setSourceFilter: (val: string) => void;
+}
+
+export function LeadFilters({
+  searchQuery,
+  setSearchQuery,
+  statusFilter,
+  setStatusFilter,
+  industryFilter,
+  setIndustryFilter,
+  sourceFilter,
+  setSourceFilter
+}: LeadFiltersProps) {
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border border-border bg-card rounded-lg mb-6">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mr-2">
-          <Filter className="h-4 w-4" />
-          FILTERS:
-        </div>
-        
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[140px] h-8 text-xs bg-background">
-            <span className="text-muted-foreground mr-1">Industry:</span> <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="saas">SaaS</SelectItem>
-            <SelectItem value="fintech">Fintech</SelectItem>
-            <SelectItem value="healthcare">Healthcare</SelectItem>
-            <SelectItem value="ai">AI</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[130px] h-8 text-xs bg-background">
-            <span className="text-muted-foreground mr-1">Status:</span> <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="generated">Generated</SelectItem>
-            <SelectItem value="sent">Sent</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select defaultValue="month">
-          <SelectTrigger className="w-[140px] h-8 text-xs bg-background">
-            <span className="text-muted-foreground mr-1">Date:</span> <SelectValue placeholder="This Month" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="today">Today</SelectItem>
-            <SelectItem value="week">This Week</SelectItem>
-            <SelectItem value="month">This Month</SelectItem>
-            <SelectItem value="all">All Time</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground px-2">
-          Clear All
-        </Button>
+    <div className="flex flex-col sm:flex-row items-center gap-4 py-4 mb-2">
+      <div className="relative flex-1 w-full">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input 
+          placeholder="Search by name, email, or company..." 
+          className="pl-9 bg-card"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
+      
+      <div className="flex items-center gap-3 w-full sm:w-auto">
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
+          <SelectTrigger className="w-full sm:w-[140px] bg-card">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {LeadStatusEnum.options.map(status => (
+              <SelectItem key={status} value={status}>{status}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <div className="flex items-center gap-4 border-l border-border pl-4">
-        <div className="flex flex-col">
-          <span className="text-xs text-muted-foreground">Total Leads</span>
-          <span className="text-lg font-bold leading-none mt-1">1,284</span>
-        </div>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10 text-green-500">
-          <TrendingUp className="h-4 w-4" />
-        </div>
+        <Select value={industryFilter} onValueChange={(v) => setIndustryFilter(v || "all")}>
+          <SelectTrigger className="w-full sm:w-[140px] bg-card">
+            <SelectValue placeholder="All Industries" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Industries</SelectItem>
+            {/* Real app would dynamically generate this from data, or have a predefined list */}
+            <SelectItem value="SaaS">SaaS</SelectItem>
+            <SelectItem value="Fintech">Fintech</SelectItem>
+            <SelectItem value="Healthcare">Healthcare</SelectItem>
+            <SelectItem value="E-commerce">E-commerce</SelectItem>
+            <SelectItem value="Other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={sourceFilter} onValueChange={(v) => setSourceFilter(v || "all")}>
+          <SelectTrigger className="w-full sm:w-[130px] bg-card">
+            <SelectValue placeholder="All Sources" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Sources</SelectItem>
+            <SelectItem value="Manual">Manual</SelectItem>
+            <SelectItem value="CSV">CSV</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

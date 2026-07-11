@@ -11,12 +11,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Upload, FileType, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
+import { Upload, FileType, Loader2, X, AlertCircle } from "lucide-react";
 import Papa from "papaparse";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from "@/lib/firebase/auth";
+import { LeadInput, leadSchema } from "@/types/lead";
+import { batchImportLeads } from "@/lib/firebase/leads";
+import { Lead } from "@/types/lead";
 
-export function CsvImportDialog() {
+interface CsvImportDialogProps {
+  existingLeads: Lead[];
+}
+
+export function CsvImportDialog({ existingLeads }: CsvImportDialogProps) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -34,57 +43,110 @@ export function CsvImportDialog() {
     }
   };
 
+  const resetState = () => {
+    setFile(null);
+    setProgress(0);
+    setIsUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleImport = async () => {
-    if (!file) return;
+    if (!file || !user) return;
 
     setIsUploading(true);
     setProgress(10);
 
-    // Parse CSV
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        setProgress(40);
+        setProgress(30);
         try {
-          const leads = results.data;
-          
-          if (leads.length === 0) {
+          const rows = results.data as Record<string, string>[];
+          if (rows.length === 0) {
             throw new Error("CSV file is empty");
           }
-          
-          // Simulated upload process
-          const chunkSize = Math.max(1, Math.floor(leads.length / 5));
-          for (let i = 0; i < 5; i++) {
-            await new Promise(r => setTimeout(r, 400));
-            setProgress(40 + (i * 10));
+
+          const existingEmails = new Set(existingLeads.map(l => l.email.toLowerCase()));
+          const validLeadsToImport: LeadInput[] = [];
+          let skippedCount = 0;
+          let failedCount = 0;
+
+          rows.forEach(row => {
+            // Map common CSV columns to our schema
+            const rawLead = {
+              firstName: row.firstName || row["First Name"] || "",
+              lastName: row.lastName || row["Last Name"] || "",
+              email: (row.email || row["Email"] || "").trim().toLowerCase(),
+              company: row.company || row["Company"] || "Unknown",
+              jobTitle: row.jobTitle || row["Job Title"] || row.title || "Unknown",
+              industry: row.industry || row["Industry"] || "Other",
+              phone: row.phone || row["Phone"] || "",
+              website: row.website || row["Website"] || "",
+              linkedin: row.linkedin || row["LinkedIn"] || "",
+              location: row.location || row["Location"] || "",
+              companySize: row.companySize || row["Company Size"] || "",
+              source: "CSV",
+              status: "New",
+            };
+
+            const parsed = leadSchema.safeParse(rawLead);
+            if (parsed.success) {
+              if (existingEmails.has(parsed.data.email)) {
+                skippedCount++;
+              } else {
+                validLeadsToImport.push(parsed.data);
+                // add to set so we don't import duplicates within the same CSV
+                existingEmails.add(parsed.data.email);
+              }
+            } else {
+              failedCount++;
+            }
+          });
+
+          setProgress(60);
+
+          if (validLeadsToImport.length > 0) {
+            // Firestore batches have a limit of 500. For production, chunk this if needed.
+            // Assuming max 500 for this CRM scale per import.
+            const chunks = [];
+            for (let i = 0; i < validLeadsToImport.length; i += 400) {
+              chunks.push(validLeadsToImport.slice(i, i + 400));
+            }
+
+            for (let i = 0; i < chunks.length; i++) {
+              await batchImportLeads(user.uid, chunks[i]);
+              setProgress(60 + ((i + 1) / chunks.length) * 40);
+            }
+          } else {
+            setProgress(100);
           }
-          
-          setProgress(100);
+
           setTimeout(() => {
-            toast.success(`Successfully imported ${leads.length} leads`);
+            toast.success(`Import complete!`, {
+              description: `Imported: ${validLeadsToImport.length} | Skipped (Dupes): ${skippedCount} | Failed (Invalid): ${failedCount}`
+            });
             setIsOpen(false);
-            setFile(null);
-            setProgress(0);
-            setIsUploading(false);
+            resetState();
           }, 500);
 
-        } catch (error: any) {
-          toast.error(error.message || "Failed to process CSV");
-          setIsUploading(false);
-          setProgress(0);
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Failed to process CSV");
+          resetState();
         }
       },
       error: (error) => {
         toast.error(`Error parsing CSV: ${error.message}`);
-        setIsUploading(false);
-        setProgress(0);
+        resetState();
       }
     });
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (!open) resetState();
+    }}>
       <DialogTrigger asChild>
         <Button variant="outline" className="h-9 gap-2">
           <Upload className="h-4 w-4" />
@@ -95,7 +157,7 @@ export function CsvImportDialog() {
         <DialogHeader>
           <DialogTitle>Import Leads</DialogTitle>
           <DialogDescription>
-            Upload a CSV file containing your leads. The file should include columns for Name, Email, Company, and Industry.
+            Upload a CSV file containing your leads. Required columns: First Name, Last Name, Email, Company, Job Title, Industry.
           </DialogDescription>
         </DialogHeader>
         
@@ -139,7 +201,7 @@ export function CsvImportDialog() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-muted-foreground">
                     <span>Importing leads...</span>
-                    <span>{progress}%</span>
+                    <span>{Math.round(progress)}%</span>
                   </div>
                   <Progress value={progress} className="h-2" />
                 </div>

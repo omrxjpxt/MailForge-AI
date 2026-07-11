@@ -4,11 +4,7 @@ import {
   doc, 
   setDoc, 
   updateDoc, 
-  deleteDoc, 
-  serverTimestamp,
-  getDocs,
-  query,
-  orderBy
+  deleteDoc
 } from "firebase/firestore";
 import { EmailTemplate, TemplateInput } from "@/types/template";
 
@@ -52,6 +48,7 @@ export const deleteTemplate = async (userId: string, templateId: string): Promis
 };
 
 export const duplicateTemplate = async (userId: string, template: EmailTemplate): Promise<string> => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, userId: _, usageCount, replyCount, openCount, campaignCount, lastUsed, createdAt, updatedAt, version, ...data } = template;
   
   const duplicatedData: TemplateInput = {

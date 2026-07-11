@@ -1,53 +1,59 @@
 "use client";
 
-import { Users, MessageSquarePlus, Bot, ShieldCheck } from "lucide-react";
+import { Users, Mailbox, Activity, CheckCircle2 } from "lucide-react";
+import { Campaign } from "@/types/campaign";
 
-export function CampaignStats() {
+interface CampaignStatsProps {
+  campaigns: Campaign[];
+}
+
+export function CampaignStats({ campaigns }: CampaignStatsProps) {
+  const activeCampaigns = campaigns.filter(c => c.status === "Running" || c.status === "Scheduled").length;
+  
+  const totalLeads = campaigns.reduce((acc, c) => acc + c.totalLeads, 0);
+  const emailsSent = campaigns.reduce((acc, c) => acc + c.emailsSent, 0);
+  
+  const totalDelivered = campaigns.reduce((acc, c) => acc + c.emailsDelivered, 0);
+  const totalOpens = campaigns.reduce((acc, c) => acc + c.opens, 0);
+  
+  const avgOpenRate = totalDelivered > 0 ? (totalOpens / totalDelivered) * 100 : 0;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center gap-2 text-muted-foreground mb-3">
+          <Activity className="h-4 w-4 text-blue-500" />
+          <span className="text-sm font-medium">Active Campaigns</span>
+        </div>
+        <div className="text-3xl font-bold mb-1">{activeCampaigns}</div>
+        <div className="text-xs font-medium text-muted-foreground">Out of {campaigns.length} total</div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center gap-2 text-muted-foreground mb-3">
           <Users className="h-4 w-4" />
-          <span className="text-sm font-medium">Total Prospects</span>
+          <span className="text-sm font-medium">Total Enrolled Leads</span>
         </div>
-        <div className="text-3xl font-bold mb-1">2,480</div>
-        <div className="text-xs font-medium text-green-500">+140 this week</div>
+        <div className="text-3xl font-bold mb-1">{totalLeads.toLocaleString()}</div>
+        <div className="text-xs font-medium text-muted-foreground">Across all campaigns</div>
       </div>
       
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center gap-2 text-muted-foreground mb-3">
-          <MessageSquarePlus className="h-4 w-4 text-green-500" />
-          <span className="text-sm font-medium">Positive Replies</span>
+          <Mailbox className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Emails Sent</span>
         </div>
-        <div className="text-3xl font-bold mb-1">312</div>
-        <div className="text-xs font-medium text-green-500">12.5% Conversion</div>
+        <div className="text-3xl font-bold mb-1">{emailsSent.toLocaleString()}</div>
+        <div className="text-xs font-medium text-muted-foreground">All time volume</div>
       </div>
       
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-center gap-2 text-muted-foreground mb-3">
-          <Bot className="h-4 w-4 text-orange-400" />
-          <span className="text-sm font-medium">AI Drafter Active</span>
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
+          <span className="text-sm font-medium">Avg. Open Rate</span>
         </div>
-        <div className="text-3xl font-bold mb-1">86%</div>
-        <div className="text-xs font-medium text-muted-foreground">Automating responses</div>
-      </div>
-      
-      <div className="rounded-xl border border-border bg-card p-5 relative overflow-hidden">
-        <div className="absolute right-0 top-0 opacity-5 w-32 h-32 translate-x-8 -translate-y-8">
-          <ShieldCheck className="w-full h-full" />
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground mb-3">
-          <span className="text-sm font-medium">Global Health</span>
-        </div>
-        <div className="flex items-center gap-3 mt-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-green-500/30 bg-green-500/10 text-green-500 font-bold text-lg shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-            A+
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold leading-tight">High deliverability</span>
-            <span className="text-xs text-muted-foreground mt-0.5">Sender score optimal</span>
-          </div>
-        </div>
+        <div className="text-3xl font-bold mb-1">{avgOpenRate.toFixed(1)}%</div>
+        <div className="text-xs font-medium text-muted-foreground">Based on deliveries</div>
       </div>
     </div>
   );

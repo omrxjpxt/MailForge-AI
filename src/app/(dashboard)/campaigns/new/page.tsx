@@ -1,51 +1,207 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useForm, useFieldArray, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Sparkles, Send, Users } from "lucide-react";
+import { ArrowLeft, Sparkles, Send, Loader2, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/lib/firebase/auth";
+import { createCampaign } from "@/lib/firebase/campaigns";
+import { CampaignInputSchema, CampaignInput } from "@/types/campaign";
+import { LeadSelector } from "@/components/campaigns/lead-selector";
+import { EmailTemplate } from "@/types/template";
+import { collection, query, orderBy, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 
 export default function NewCampaignPage() {
+  const { user } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleNext = () => setStep(s => Math.min(3, s + 1));
-  const handlePrev = () => setStep(s => Math.max(1, s - 1));
+  const [isSaving, setIsSaving] = useState(false);
   
-  const handleGenerate = () => {
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors }
+  } = useForm({
+    resolver: zodResolver(CampaignInputSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      status: "Draft",
+      leadIds: [],
+      steps: [
+        { stepId: crypto.randomUUID(), subject: "", body: "", waitDays: 0, status: "Pending" }
+      ],
+      dailyLimit: 50,
+      delayBetweenEmails: 0,
+      timezone: "UTC",
+    }
+  });
+
+  const { fields: steps, append, remove } = useFieldArray({
+    control,
+    name: "steps"
+  });
+
+  const selectedLeadIds = watch("leadIds") || [];
+  const formSteps = watch("steps") || [];
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchTemplates = async () => {
+      setIsTemplatesLoading(true);
+      try {
+        const q = query(
+          collection(db, "users", user.uid, "templates"),
+          orderBy("createdAt", "desc")
+        );
+        const snapshot = await getDocs(q);
+        const fetchedTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
+        setTemplates(fetchedTemplates);
+      } catch (error) {
+        console.error("Failed to load templates:", error);
+      } finally {
+        setIsTemplatesLoading(false);
+      }
+    };
+    fetchTemplates();
+  }, [user]);
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (!watch("name")) return toast.error("Campaign name is required");
+    }
+    if (step === 2) {
+      if (!selectedLeadIds || selectedLeadIds.length === 0) return toast.error("Please select at least one lead");
+    }
+    setStep(s => Math.min(3, s + 1));
+  };
+  
+  const handlePrev = () => setStep(s => Math.max(1, s - 1));
+
+  const handleGenerateAI = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
+    try {
+      // Create a prompt summarizing the campaign
+      const prompt = `Write a cold outreach sequence for a campaign named "${watch("name")}". Include a subject and body.`;
+      
+      const res = await fetch("/api/templates/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate");
+      
+      // Update first step with AI generation
+      setValue("steps.0.subject", data.template.subject);
+      setValue("steps.0.body", data.template.body);
+      
       toast.success("AI generated campaign sequence!");
-    }, 2000);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to generate");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const handleSave = () => {
-    toast.success("Campaign saved successfully!");
-    router.push("/campaigns");
+  const handleTemplateSelect = (templateId: string | null) => {
+    if (!templateId) return;
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+    
+    setValue("templateId", templateId);
+    // Snapshot template to step 1
+    setValue("steps.0.subject", template.subject);
+    setValue("steps.0.body", template.body);
+    toast.success("Template applied to Step 1");
+  };
+
+  const onSubmit = async (data: any) => {
+    if (!user) return toast.error("You must be logged in");
+    if (!data.leadIds || data.leadIds.length === 0) return toast.error("Select at least one lead");
+    
+    // Validate steps
+    for (const [index, stepData] of (data.steps || []).entries()) {
+      if (!stepData.subject || !stepData.body) {
+        return toast.error(`Email step ${index + 1} is missing subject or body`);
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      // Schedule immediately vs draft logic can be added here
+      data.totalLeads = data.leadIds ? data.leadIds.length : 0;
+      data.status = "Scheduled"; // Launching sets to scheduled/running
+      
+      await createCampaign(user.uid, data);
+      
+      toast.success("Campaign launched successfully!");
+      router.push("/campaigns");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create campaign");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const saveAsDraft = async () => {
+    if (!user) return;
+    const data = watch();
+    if (!data.name) return toast.error("Campaign name is required to save draft");
+
+    setIsSaving(true);
+    try {
+      data.totalLeads = data.leadIds ? data.leadIds.length : 0;
+      data.status = "Draft";
+      await createCampaign(user.uid, data as CampaignInput);
+      toast.success("Draft saved");
+      router.push("/campaigns");
+    } catch (error: any) {
+      toast.error("Failed to save draft");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/campaigns">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div className="flex flex-col">
-          <h1 className="text-2xl font-bold tracking-tight">Create New Campaign</h1>
-          <p className="text-muted-foreground text-sm">Launch a new targeted outreach sequence.</p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/campaigns">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold tracking-tight">Create New Campaign</h1>
+            <p className="text-muted-foreground text-sm">Launch a new targeted outreach sequence.</p>
+          </div>
         </div>
+        
+        <Button variant="outline" onClick={saveAsDraft} disabled={isSaving}>
+          {isSaving && step !== 3 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          Save as Draft
+        </Button>
       </div>
 
       <div className="flex justify-between items-center mb-2 px-2">
@@ -69,40 +225,36 @@ export default function NewCampaignPage() {
         <Card className="bg-card">
           <CardHeader>
             <CardTitle>Campaign Details</CardTitle>
-            <CardDescription>Give your campaign a name and set its primary objective.</CardDescription>
+            <CardDescription>Give your campaign a name and set sending limits.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Campaign Name</Label>
-              <Input id="name" placeholder="e.g. Q4 SaaS Founders Outreach" />
+              <Label htmlFor="name">Campaign Name *</Label>
+              <Input id="name" {...register("name")} placeholder="e.g. Q4 SaaS Founders Outreach" />
+              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="objective">Objective</Label>
-              <Select defaultValue="meeting">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select objective" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="meeting">Book a Meeting</SelectItem>
-                  <SelectItem value="demo">Product Demo</SelectItem>
-                  <SelectItem value="feedback">User Feedback</SelectItem>
-                  <SelectItem value="newsletter">Newsletter Signup</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Input id="description" {...register("description")} placeholder="Briefly describe the campaign" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="tone">AI Writing Tone</Label>
-              <Select defaultValue="professional">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select tone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="professional">Professional & Direct</SelectItem>
-                  <SelectItem value="friendly">Friendly & Casual</SelectItem>
-                  <SelectItem value="persuasive">Persuasive & Urgent</SelectItem>
-                  <SelectItem value="curious">Curious & Questioning</SelectItem>
-                </SelectContent>
-              </Select>
+            
+            <div className="grid grid-cols-2 gap-4 border-t border-border pt-4 mt-2">
+              <div className="space-y-2">
+                <Label htmlFor="dailyLimit">Daily Email Limit</Label>
+                <Input 
+                  id="dailyLimit" 
+                  type="number" 
+                  {...register("dailyLimit", { valueAsNumber: true })} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="delayBetweenEmails">Delay between emails (seconds)</Label>
+                <Input 
+                  id="delayBetweenEmails" 
+                  type="number" 
+                  {...register("delayBetweenEmails", { valueAsNumber: true })} 
+                />
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
@@ -114,51 +266,31 @@ export default function NewCampaignPage() {
       {step === 2 && (
         <Card className="bg-card">
           <CardHeader>
-            <CardTitle>Target Audience</CardTitle>
-            <CardDescription>Select which leads will receive this campaign.</CardDescription>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>Target Audience</CardTitle>
+                <CardDescription>Select which leads will receive this campaign.</CardDescription>
+              </div>
+              {selectedLeadIds && selectedLeadIds.length > 0 && (
+                <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-semibold">
+                  {selectedLeadIds.length} leads selected
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="border border-border rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-4 bg-muted/20">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <Users className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-medium">No Audience Selected</h3>
-                <p className="text-sm text-muted-foreground mt-1">Choose a segment or import new leads.</p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline">Select Segment</Button>
-                <Button variant="outline">Import CSV</Button>
-              </div>
-            </div>
-            
-            <div className="space-y-2 pt-4">
-              <Label>Filter rules (Optional)</Label>
-              <div className="flex gap-2">
-                <Select defaultValue="industry">
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Attribute" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="industry">Industry</SelectItem>
-                    <SelectItem value="title">Job Title</SelectItem>
-                    <SelectItem value="company">Company Size</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select defaultValue="equals">
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Condition" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="equals">Equals</SelectItem>
-                    <SelectItem value="contains">Contains</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input placeholder="Value" className="flex-1" />
-              </div>
-            </div>
+            <Controller
+              control={control}
+              name="leadIds"
+              render={({ field }) => (
+                <LeadSelector 
+                  selectedLeadIds={field.value || []} 
+                  onChange={field.onChange} 
+                />
+              )}
+            />
           </CardContent>
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex justify-between border-t border-border pt-6">
             <Button variant="ghost" onClick={handlePrev}>Back</Button>
             <Button onClick={handleNext}>Next Step</Button>
           </CardFooter>
@@ -171,90 +303,106 @@ export default function NewCampaignPage() {
             <div className="flex justify-between items-center">
               <div>
                 <CardTitle>Email Sequence</CardTitle>
-                <CardDescription>Write your emails or let AI generate them for you.</CardDescription>
+                <CardDescription>Write your emails, use templates, or let AI generate them.</CardDescription>
               </div>
-              <Button 
-                variant="secondary" 
-                className="gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                onClick={handleGenerate}
-                disabled={isGenerating}
-              >
-                <Sparkles className="h-4 w-4" />
-                {isGenerating ? "Generating..." : "Auto-Generate with AI"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select disabled={isTemplatesLoading} onValueChange={handleTemplateSelect}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Use Template..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map(t => (
+                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Button 
+                  variant="secondary" 
+                  className="gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
+                  onClick={handleGenerateAI}
+                  disabled={isGenerating}
+                >
+                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  Generate AI
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Tabs defaultValue="step1">
-              <TabsList>
-                <TabsTrigger value="step1">Email 1 (Day 1)</TabsTrigger>
-                <TabsTrigger value="step2">Follow up 1 (Day 4)</TabsTrigger>
-                <TabsTrigger value="step3">Follow up 2 (Day 8)</TabsTrigger>
+            <Tabs defaultValue={steps[0]?.id || "step1"}>
+              <TabsList className="w-full justify-start overflow-x-auto">
+                {steps.map((field, index) => (
+                  <TabsTrigger key={field.id} value={field.id}>
+                    {index === 0 ? "Email 1" : `Follow Up ${index} (Wait ${formSteps[index]?.waitDays || 0}d)`}
+                  </TabsTrigger>
+                ))}
               </TabsList>
               
-              <TabsContent value="step1" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label>Subject Line</Label>
-                  <Input placeholder="Quick question about {{companyName}}'s outreach" defaultValue="Quick question about {{companyName}}'s outreach" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email Body</Label>
-                  <Textarea 
-                    className="min-h-[250px] font-mono text-sm" 
-                    placeholder="Hi {{firstName}},..."
-                    defaultValue={`Hi {{firstName}},
+              {steps.map((field, index) => (
+                <TabsContent key={field.id} value={field.id} className="space-y-4 mt-4">
+                  {index > 0 && (
+                    <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
+                      <div className="space-y-1">
+                        <Label>Wait time before sending</Label>
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            type="number" 
+                            {...register(`steps.${index}.waitDays`, { valueAsNumber: true })} 
+                            className="w-[80px]" 
+                          />
+                          <span className="text-sm text-muted-foreground">days after previous step</span>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remove Step
+                      </Button>
+                    </div>
+                  )}
 
-I noticed {{companyName}} is growing fast in the {{industry}} space. 
-
-Many teams like yours struggle with scaling personalized outreach. We've built an AI-powered platform that automates this while keeping the human touch.
-
-Would you be open to a quick 10-min chat next week to see if we can help?
-
-Best,
-Om`}
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="step2" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label>Wait time</Label>
-                  <div className="flex items-center gap-2">
-                    <Input type="number" defaultValue="3" className="w-[80px]" />
-                    <span className="text-sm text-muted-foreground">days after previous step</span>
+                  <div className="space-y-2">
+                    <Label>Subject Line *</Label>
+                    <Input 
+                      {...register(`steps.${index}.subject`)} 
+                      placeholder="Enter subject line..." 
+                    />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Email Body</Label>
-                  <Textarea 
-                    className="min-h-[200px] font-mono text-sm" 
-                    placeholder="Just bubbling this up..."
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="step3" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label>Wait time</Label>
-                  <div className="flex items-center gap-2">
-                    <Input type="number" defaultValue="4" className="w-[80px]" />
-                    <span className="text-sm text-muted-foreground">days after previous step</span>
+                  <div className="space-y-2">
+                    <Label>Email Body *</Label>
+                    <Textarea 
+                      {...register(`steps.${index}.body`)}
+                      className="min-h-[250px] font-mono text-sm" 
+                      placeholder="Hi {{firstName}},..."
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Use placeholders: <code className="bg-muted px-1 py-0.5 rounded">{"{{firstName}}"}</code>, <code className="bg-muted px-1 py-0.5 rounded">{"{{company}}"}</code>
+                    </p>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Email Body</Label>
-                  <Textarea 
-                    className="min-h-[200px] font-mono text-sm" 
-                    placeholder="Final follow up..."
-                  />
-                </div>
-              </TabsContent>
+                </TabsContent>
+              ))}
+
+              <div className="pt-4 border-t border-border mt-6">
+                <Button 
+                  variant="outline" 
+                  className="w-full border-dashed"
+                  onClick={() => append({ stepId: crypto.randomUUID(), subject: "", body: "", waitDays: 3, status: "Pending" })}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Follow-up Step
+                </Button>
+              </div>
             </Tabs>
           </CardContent>
           <CardFooter className="flex justify-between border-t border-border pt-6">
-            <Button variant="ghost" onClick={handlePrev}>Back</Button>
-            <Button className="gap-2" onClick={handleSave}>
-              <Send className="h-4 w-4" />
+            <Button variant="ghost" onClick={handlePrev} disabled={isSaving}>Back</Button>
+            <Button className="gap-2" onClick={handleSubmit(onSubmit)} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Launch Campaign
             </Button>
           </CardFooter>

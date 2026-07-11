@@ -2,43 +2,64 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { MoreVertical, Zap, Sparkles } from "lucide-react";
+import { MoreVertical, Zap, Sparkles, Play, Pause, Copy, Archive, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Campaign } from "@/types/campaign";
 
 interface CampaignCardProps {
-  name: string;
-  status: "Active" | "Paused";
-  openRate: number;
-  openRateTrend: string;
-  replyRate: number;
-  replyRateTrend: string;
-  sent: number;
-  total: number;
-  icon: "zap" | "sparkles";
+  campaign: Campaign;
+  onLaunch?: (id: string) => void;
+  onPause?: (id: string) => void;
+  onDuplicate?: (campaign: Campaign) => void;
+  onArchive?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
 export function CampaignCard({
-  name,
-  status,
-  openRate,
-  openRateTrend,
-  replyRate,
-  replyRateTrend,
-  sent,
-  total,
-  icon
+  campaign,
+  onLaunch,
+  onPause,
+  onDuplicate,
+  onArchive,
+  onDelete
 }: CampaignCardProps) {
-  const percentage = Math.round((sent / total) * 100);
+  const percentage = campaign.totalLeads > 0 
+    ? Math.round((campaign.emailsSent / campaign.totalLeads) * 100) 
+    : 0;
+
+  const openRate = campaign.emailsDelivered > 0 
+    ? (campaign.opens / campaign.emailsDelivered) * 100 
+    : 0;
+    
+  const replyRate = campaign.emailsDelivered > 0 
+    ? (campaign.replies / campaign.emailsDelivered) * 100 
+    : 0;
+
+  const isActive = campaign.status === "Running" || campaign.status === "Scheduled";
+  const icon = campaign.emailsSent > 0 ? "zap" : "sparkles"; // just a visual heuristic
+
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case "Running": return "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]";
+      case "Scheduled": return "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]";
+      case "Paused": return "bg-yellow-500";
+      case "Completed": return "bg-emerald-600";
+      case "Failed": return "bg-destructive";
+      case "Draft": return "bg-muted-foreground";
+      default: return "bg-muted-foreground";
+    }
+  };
 
   return (
-    <Card className="bg-card flex flex-col h-full border-border/50">
+    <Card className="bg-card flex flex-col h-full border-border/50 transition-all hover:border-primary/20 hover:shadow-sm">
       <CardContent className="p-6 flex flex-col h-full">
         <div className="flex justify-between items-start mb-6">
           <div className="flex gap-4">
@@ -48,10 +69,12 @@ export function CampaignCard({
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-lg">{name}</h3>
+              <h3 className="font-semibold text-lg truncate max-w-[180px]" title={campaign.name}>
+                {campaign.name}
+              </h3>
               <div className="flex items-center gap-1.5 mt-1">
-                <div className={`h-2 w-2 rounded-full ${status === 'Active' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-muted-foreground'}`}></div>
-                <span className="text-xs text-muted-foreground font-medium">{status}</span>
+                <div className={`h-2 w-2 rounded-full ${getStatusColor(campaign.status)}`}></div>
+                <span className="text-xs text-muted-foreground font-medium">{campaign.status}</span>
               </div>
             </div>
           </div>
@@ -62,10 +85,37 @@ export function CampaignCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Edit Campaign</DropdownMenuItem>
-              <DropdownMenuItem>{status === 'Active' ? 'Pause' : 'Resume'}</DropdownMenuItem>
-              <DropdownMenuItem>View Leads</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive">Archive</DropdownMenuItem>
+              {(campaign.status === 'Draft' || campaign.status === 'Paused') && onLaunch && (
+                <DropdownMenuItem onClick={() => onLaunch(campaign.id!)} className="cursor-pointer">
+                  <Play className="mr-2 h-4 w-4 text-green-500" /> Launch
+                </DropdownMenuItem>
+              )}
+              {isActive && onPause && (
+                <DropdownMenuItem onClick={() => onPause(campaign.id!)} className="cursor-pointer">
+                  <Pause className="mr-2 h-4 w-4 text-yellow-500" /> Pause
+                </DropdownMenuItem>
+              )}
+              {onDuplicate && (
+                <DropdownMenuItem onClick={() => onDuplicate(campaign)} className="cursor-pointer">
+                  <Copy className="mr-2 h-4 w-4" /> Duplicate
+                </DropdownMenuItem>
+              )}
+              {onArchive && campaign.status !== "Archived" && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onArchive(campaign.id!)} className="cursor-pointer">
+                    <Archive className="mr-2 h-4 w-4" /> Archive
+                  </DropdownMenuItem>
+                </>
+              )}
+              {onDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onDelete(campaign.id!)} className="cursor-pointer text-destructive focus:text-destructive">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -74,44 +124,27 @@ export function CampaignCard({
           <div className="flex flex-col gap-1 p-3 rounded-lg border border-border/50 bg-muted/20">
             <span className="text-xs font-medium text-muted-foreground">Open Rate</span>
             <span className="text-xl font-bold">{openRate.toFixed(1)}%</span>
-            <span className={`text-[10px] font-medium ${openRateTrend.startsWith('+') ? 'text-green-500' : 'text-muted-foreground'}`}>
-              {openRateTrend.startsWith('+') ? <TrendingIcon up /> : openRateTrend === 'Static' ? '— Static' : <TrendingIcon up={false} />} {openRateTrend !== 'Static' && openRateTrend}
+            <span className="text-[10px] font-medium text-muted-foreground">
+              {campaign.opens} / {campaign.emailsDelivered}
             </span>
           </div>
           <div className="flex flex-col gap-1 p-3 rounded-lg border border-border/50 bg-muted/20">
             <span className="text-xs font-medium text-muted-foreground">Reply Rate</span>
             <span className="text-xl font-bold">{replyRate.toFixed(1)}%</span>
-            <span className={`text-[10px] font-medium ${replyRateTrend.startsWith('+') ? 'text-green-500' : replyRateTrend.startsWith('-') ? 'text-destructive' : 'text-muted-foreground'}`}>
-              {replyRateTrend.startsWith('+') ? <TrendingIcon up /> : replyRateTrend.startsWith('-') ? <TrendingIcon up={false} /> : '— Static'} {replyRateTrend !== 'Static' && replyRateTrend}
+            <span className="text-[10px] font-medium text-muted-foreground">
+              {campaign.replies} / {campaign.emailsDelivered}
             </span>
           </div>
         </div>
 
         <div className="mt-auto pt-4 border-t border-border/30">
           <div className="flex justify-between items-center text-xs mb-2">
-            <span className="text-muted-foreground font-medium">{sent} / {total} Emails Sent</span>
+            <span className="text-muted-foreground font-medium">{campaign.emailsSent} / {campaign.totalLeads} Emails Sent</span>
             <span className="font-semibold">{percentage}%</span>
           </div>
-          <Progress value={percentage} className={`h-1.5 ${status === 'Active' ? 'bg-primary/20' : 'bg-muted'}`} />
+          <Progress value={percentage} className={`h-1.5 ${isActive ? 'bg-primary/20' : 'bg-muted'}`} />
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function TrendingIcon({ up }: { up: boolean }) {
-  if (up) {
-    return (
-      <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline mr-0.5">
-        <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-        <polyline points="16 7 22 7 22 13" />
-      </svg>
-    );
-  }
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="inline mr-0.5">
-      <polyline points="22 17 13.5 8.5 8.5 13.5 2 7" />
-      <polyline points="16 17 22 17 22 11" />
-    </svg>
   );
 }
