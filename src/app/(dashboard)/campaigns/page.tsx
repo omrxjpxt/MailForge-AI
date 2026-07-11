@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Play } from "lucide-react";
 import Link from "next/link";
 import { CampaignCard } from "@/components/campaigns/campaign-card";
 import { ArchivedTable } from "@/components/campaigns/archived-table";
@@ -19,9 +19,10 @@ export default function CampaignsPage() {
   const { user, loading: authLoading } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEngineRunning, setIsEngineRunning] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user) return;
 
     setIsLoading(true);
     const q = query(
@@ -104,6 +105,28 @@ export default function CampaignsPage() {
     }
   };
 
+  const handleRunEngine = async () => {
+    setIsEngineRunning(true);
+    try {
+      const res = await fetch("/api/cron/process-campaigns", {
+        method: "POST",
+        headers: {
+          "x-cron-secret": "dev-secret-123"
+        }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Engine cycle complete! Processed ${data.processedUsers} users.`);
+      } else {
+        toast.error(`Engine failed: ${data.error}`);
+      }
+    } catch (e: any) {
+      toast.error("Failed to connect to engine");
+    } finally {
+      setIsEngineRunning(false);
+    }
+  };
+
   const activeCampaigns = useMemo(() => campaigns.filter(c => c.status === "Running" || c.status === "Scheduled"), [campaigns]);
   const pausedCampaigns = useMemo(() => campaigns.filter(c => c.status === "Paused" || c.status === "Completed" || c.status === "Draft"), [campaigns]);
   const archivedCampaigns = useMemo(() => campaigns.filter(c => c.status === "Archived"), [campaigns]);
@@ -123,12 +146,20 @@ export default function CampaignsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Campaigns</h1>
           <p className="text-muted-foreground">Orchestrate and automate your outreach at scale.</p>
         </div>
-        <Button className="h-9 gap-2" asChild>
-          <Link href="/campaigns/new">
-            <Plus className="h-4 w-4" />
-            New Campaign
-          </Link>
-        </Button>
+        <div className="flex gap-2">
+          {process.env.NODE_ENV === "development" && (
+            <Button variant="secondary" className="h-9 gap-2" onClick={handleRunEngine} disabled={isEngineRunning}>
+              {isEngineRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              Run Engine Now
+            </Button>
+          )}
+          <Button className="h-9 gap-2" asChild>
+            <Link href="/campaigns/new">
+              <Plus className="h-4 w-4" />
+              New Campaign
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <CampaignStats campaigns={campaigns} />

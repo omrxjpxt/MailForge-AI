@@ -50,7 +50,7 @@ export default function LeadsPage() {
   const [leadToEdit, setLeadToEdit] = useState<Lead | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user) return;
 
     // Reset pagination when status filter changes
     setPageIndex(0);
@@ -74,11 +74,11 @@ export default function LeadsPage() {
   }, [user, statusFilter]);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user) return;
 
     setIsLoadingLeads(true);
 
-    let baseQ = collection(db, "users", user.uid, "leads");
+    const baseQ = collection(db, "users", user.uid, "leads");
     const constraints: any[] = [];
 
     if (statusFilter !== "all") {

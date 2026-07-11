@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // A helper function to verify authentication and ownership
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // USERS COLLECTION
+    // -------------------------------------------------------------------------
+    // The top-level user document. Contains user profile, global stats, etc.
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+      
+      // -----------------------------------------------------------------------
+      // NESTED SUBCOLLECTIONS
+      // Firestore rules DO NOT cascade automatically. Every nested collection
+      // must explicitly define its own rules to maintain secure, least-privilege 
+      // access control. All nested collections enforce the same owner constraint.
+      // -----------------------------------------------------------------------
+
+      // Templates: The email templates created by the user.
+      match /templates/{templateId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Leads: The CRM contacts associated with the user.
+      match /leads/{leadId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Campaigns: Active and archived email sequences.
+      match /campaigns/{campaignId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Email History: Historical records of every email sent to a lead.
+      // Typically the engine writes this, but the client needs to read it for analytics.
+      match /emailHistory/{historyId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Send Queue: Jobs queued up for the Email Sending Engine.
+      // The client reads/writes these when a campaign is launched.
+      match /sendQueue/{jobId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Generated Emails: Gemini AI generated email drafts.
+      match /generatedEmails/{emailId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Settings: User-specific configuration and preferences.
+      match /settings/{settingId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // Note: The previous top-level /settings/{uid} collection rule is omitted 
+    // because settings have been migrated to users/{uid}/settings/{settingId}.
+  }
+}

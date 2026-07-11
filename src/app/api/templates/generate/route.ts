@@ -75,7 +75,7 @@ Rules:
 
     // 4. Generate content using Gemini
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
       contents: prompt,
       config: {
         systemInstruction,
@@ -96,7 +96,7 @@ Rules:
       success: true
     });
 
-  } catch (error: any) {
+  } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
     console.error("Error generating template:", error);
     return NextResponse.json({ 
       error: error.message || "Failed to generate template" 

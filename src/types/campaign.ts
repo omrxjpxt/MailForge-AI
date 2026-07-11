@@ -56,6 +56,9 @@ export const CampaignSchema = z.object({
   failures: z.number().default(0),
   progress: z.number().default(0), // Percentage 0-100
   
+  dailyEmailsSent: z.number().default(0),
+  dailyEmailsSentDate: z.string().optional().nullable(), // YYYY-MM-DD
+  
   createdAt: z.number(),
   updatedAt: z.number(),
 });

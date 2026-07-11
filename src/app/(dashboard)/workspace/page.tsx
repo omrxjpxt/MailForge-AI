@@ -47,7 +47,7 @@ export default function WorkspacePage() {
       } else {
         throw new Error(data.error);
       }
-    } catch (error: any) {
+    } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
       toast.error(error.message || "Failed to generate");
     } finally {
       setIsGenerating(false);

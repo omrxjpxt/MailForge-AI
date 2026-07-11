@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, messageId: res.data.id });
-  } catch (error: any) {
+  } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
     console.error("Error sending email:", error);
     return NextResponse.json({ error: error.message || "Failed to send email" }, { status: 500 });
   }

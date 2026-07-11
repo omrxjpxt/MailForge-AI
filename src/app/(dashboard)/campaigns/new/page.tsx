@@ -23,7 +23,7 @@ import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
 export default function NewCampaignPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -64,7 +64,7 @@ export default function NewCampaignPage() {
   const formSteps = watch("steps") || [];
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user) return;
     
     const fetchTemplates = async () => {
       setIsTemplatesLoading(true);

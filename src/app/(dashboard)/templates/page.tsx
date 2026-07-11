@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 export default function TemplatesPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -34,7 +34,7 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user) return;
 
     const templatesRef = getTemplatesCollection(user.uid);
     const q = query(templatesRef, where("isArchived", "==", false), orderBy("updatedAt", "desc"));
@@ -48,13 +48,19 @@ export default function TemplatesPage() {
       setTemplates(fetchedTemplates);
       setLoading(false);
     }, (error) => {
+      console.log({
+        operation: "onSnapshot",
+        path: "users/{uid}/templates",
+        uid: user.uid,
+        error
+      });
       console.error("Error fetching templates:", error);
       toast.error("Failed to load templates");
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, authLoading]);
 
   const categories = useMemo(() => {
     const cats = new Set<string>();

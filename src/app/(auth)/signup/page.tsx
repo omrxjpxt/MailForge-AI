@@ -41,7 +41,7 @@ export default function SignupPage() {
       });
 
       // 4. Create default settings document
-      await setDoc(doc(db, "settings", user.uid), {
+      await setDoc(doc(db, "users", user.uid, "settings", "default"), {
         dailyLimit: 50,
         delayBetweenEmails: 30,
         defaultTone: "professional",

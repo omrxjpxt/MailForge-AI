@@ -17,13 +17,13 @@ interface LeadSelectorProps {
 }
 
 export function LeadSelector({ selectedLeadIds, onChange }: LeadSelectorProps) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading || !user) return;
 
     // eslint-disable-next-line
     setIsLoading(true);
@@ -42,7 +42,7 @@ export function LeadSelector({ selectedLeadIds, onChange }: LeadSelectorProps) {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, authLoading]);
 
   const filteredLeads = useMemo(() => {
     if (!searchQuery) return leads;
