@@ -56,17 +56,50 @@ export default function LeadsPage() {
     setPageIndex(0);
     setPageCursors([]);
     
-    // Get total count
     const fetchTotal = async () => {
       try {
+        console.log({
+          uid: user?.uid,
+          authLoading,
+          email: user?.email
+        });
+        
+        console.log("Executing Query:", {
+          collection: `users/${user.uid}/leads`,
+          operation: "getCountFromServer",
+          statusFilter
+        });
+        
         let q = query(collection(db, "users", user.uid, "leads"));
         if (statusFilter !== "all") {
           q = query(q, where("status", "==", statusFilter));
         }
         const snapshot = await getCountFromServer(q);
         setTotalCount(snapshot.data().count);
-      } catch (err) {
-        console.error("Failed to fetch count:", err);
+      } catch (error: any) {
+        console.error("RAW ERROR:", error);
+
+        if (error instanceof Error) {
+          console.error("MESSAGE:", error.message);
+          console.error("NAME:", error.name);
+          console.error("STACK:", error.stack);
+        }
+
+        console.error("STRING:", String(error));
+
+        const e = error as any;
+
+        console.error("CODE:", e?.code);
+        console.error("CUSTOM DATA:", e?.customData);
+        console.error("FULL OBJECT:", e);
+
+        console.error("Firebase Context", {
+          uid: user?.uid,
+          authLoading,
+          projectId: db.app.options.projectId,
+          authDomain: db.app.options.authDomain,
+          path: `users/${user?.uid}/leads`,
+        });
       }
     };
     fetchTotal();
@@ -78,46 +111,99 @@ export default function LeadsPage() {
 
     setIsLoadingLeads(true);
 
-    const baseQ = collection(db, "users", user.uid, "leads");
-    const constraints: any[] = [];
-
-    if (statusFilter !== "all") {
-      constraints.push(where("status", "==", statusFilter));
-    }
-    
-    // Sort by createdAt descending
-    constraints.push(orderBy("createdAt", "desc"));
-    constraints.push(limit(PAGE_SIZE));
-
-    // Apply pagination cursor if not on first page
-    if (pageIndex > 0 && pageCursors[pageIndex - 1]) {
-      constraints.push(startAfter(pageCursors[pageIndex - 1]));
-    }
-
-    const q = query(baseQ, ...constraints);
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead));
-      setLeads(newLeads);
-      
-      // Save the last visible document for the current page
-      if (snapshot.docs.length > 0) {
-        const lastVisible = snapshot.docs[snapshot.docs.length - 1];
-        setPageCursors(prev => {
-          const next = [...prev];
-          next[pageIndex] = lastVisible;
-          return next;
-        });
-      }
-      
-      setIsLoadingLeads(false);
-    }, (error) => {
-      console.error("Firestore leads error:", error);
-      toast.error("Failed to load leads");
-      setIsLoadingLeads(false);
+    console.log("Executing Query:", {
+      collection: `users/${user.uid}/leads`,
+      operation: "onSnapshot",
+      statusFilter,
+      orderBy: "createdAt desc"
     });
 
-    return () => unsubscribe();
+    try {
+      const baseQ = collection(db, "users", user.uid, "leads");
+      const constraints: any[] = [];
+
+      if (statusFilter !== "all") {
+        constraints.push(where("status", "==", statusFilter));
+      }
+      
+      constraints.push(orderBy("createdAt", "desc"));
+      constraints.push(limit(PAGE_SIZE));
+
+      if (pageIndex > 0 && pageCursors[pageIndex - 1]) {
+        constraints.push(startAfter(pageCursors[pageIndex - 1]));
+      }
+
+      const q = query(baseQ, ...constraints);
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const newLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead));
+        setLeads(newLeads);
+        
+        if (snapshot.docs.length > 0) {
+          const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+          setPageCursors(prev => {
+            const next = [...prev];
+            next[pageIndex] = lastVisible;
+            return next;
+          });
+        }
+        
+        setIsLoadingLeads(false);
+      }, (error: any) => {
+        console.error("RAW ERROR:", error);
+
+        if (error instanceof Error) {
+          console.error("MESSAGE:", error.message);
+          console.error("NAME:", error.name);
+          console.error("STACK:", error.stack);
+        }
+
+        console.error("STRING:", String(error));
+
+        const e = error as any;
+
+        console.error("CODE:", e?.code);
+        console.error("CUSTOM DATA:", e?.customData);
+        console.error("FULL OBJECT:", e);
+
+        console.error("Firebase Context", {
+          uid: user?.uid,
+          authLoading,
+          projectId: db.app.options.projectId,
+          authDomain: db.app.options.authDomain,
+          path: `users/${user?.uid}/leads`,
+        });
+        toast.error("Failed to load leads");
+        setIsLoadingLeads(false);
+      });
+
+      return () => unsubscribe();
+    } catch (error: any) {
+      console.error("RAW ERROR:", error);
+
+      if (error instanceof Error) {
+        console.error("MESSAGE:", error.message);
+        console.error("NAME:", error.name);
+        console.error("STACK:", error.stack);
+      }
+
+      console.error("STRING:", String(error));
+
+      const e = error as any;
+
+      console.error("CODE:", e?.code);
+      console.error("CUSTOM DATA:", e?.customData);
+      console.error("FULL OBJECT:", e);
+
+      console.error("Firebase Context", {
+        uid: user?.uid,
+        authLoading,
+        projectId: db.app.options.projectId,
+        authDomain: db.app.options.authDomain,
+        path: `users/${user?.uid}/leads`,
+      });
+      setIsLoadingLeads(false);
+    }
   }, [user, statusFilter, pageIndex]); // Excluded pageCursors on purpose to prevent loops
 
   const filteredLeads = useMemo(() => {

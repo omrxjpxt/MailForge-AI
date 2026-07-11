@@ -37,29 +37,85 @@ export default function TemplatesPage() {
     if (authLoading || !user) return;
 
     const templatesRef = getTemplatesCollection(user.uid);
-    const q = query(templatesRef, where("isArchived", "==", false), orderBy("updatedAt", "desc"));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedTemplates = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as EmailTemplate[];
-      
-      setTemplates(fetchedTemplates);
-      setLoading(false);
-    }, (error) => {
-      console.log({
-        operation: "onSnapshot",
-        path: "users/{uid}/templates",
-        uid: user.uid,
-        error
-      });
-      console.error("Error fetching templates:", error);
-      toast.error("Failed to load templates");
-      setLoading(false);
+    
+    console.log({
+      uid: user?.uid,
+      authLoading,
+      email: user?.email
+    });
+    
+    console.log("Executing Query:", {
+      collection: `users/${user.uid}/templates`,
+      where: "isArchived == false",
+      orderBy: "updatedAt desc"
     });
 
-    return () => unsubscribe();
+    try {
+      const q = query(templatesRef, where("isArchived", "==", false), orderBy("updatedAt", "desc"));
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedTemplates = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as EmailTemplate[];
+        
+        setTemplates(fetchedTemplates);
+        setLoading(false);
+      }, (error: any) => {
+        console.error("RAW ERROR:", error);
+
+        if (error instanceof Error) {
+          console.error("MESSAGE:", error.message);
+          console.error("NAME:", error.name);
+          console.error("STACK:", error.stack);
+        }
+
+        console.error("STRING:", String(error));
+
+        const e = error as any;
+
+        console.error("CODE:", e?.code);
+        console.error("CUSTOM DATA:", e?.customData);
+        console.error("FULL OBJECT:", e);
+
+        console.error("Firebase Context", {
+          uid: user?.uid,
+          authLoading,
+          projectId: db.app.options.projectId,
+          authDomain: db.app.options.authDomain,
+          path: `users/${user?.uid}/templates`,
+        });
+        toast.error("Failed to load templates");
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    } catch (error: any) {
+      console.error("RAW ERROR:", error);
+
+      if (error instanceof Error) {
+        console.error("MESSAGE:", error.message);
+        console.error("NAME:", error.name);
+        console.error("STACK:", error.stack);
+      }
+
+      console.error("STRING:", String(error));
+
+      const e = error as any;
+
+      console.error("CODE:", e?.code);
+      console.error("CUSTOM DATA:", e?.customData);
+      console.error("FULL OBJECT:", e);
+
+      console.error("Firebase Context", {
+        uid: user?.uid,
+        authLoading,
+        projectId: db.app.options.projectId,
+        authDomain: db.app.options.authDomain,
+        path: `users/${user?.uid}/templates`,
+      });
+      setLoading(false);
+    }
   }, [user, authLoading]);
 
   const categories = useMemo(() => {
