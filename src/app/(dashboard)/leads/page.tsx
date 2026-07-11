@@ -58,48 +58,14 @@ export default function LeadsPage() {
     
     const fetchTotal = async () => {
       try {
-        console.log({
-          uid: user?.uid,
-          authLoading,
-          email: user?.email
-        });
-        
-        console.log("Executing Query:", {
-          collection: `users/${user.uid}/leads`,
-          operation: "getCountFromServer",
-          statusFilter
-        });
-        
         let q = query(collection(db, "users", user.uid, "leads"));
         if (statusFilter !== "all") {
           q = query(q, where("status", "==", statusFilter));
         }
         const snapshot = await getCountFromServer(q);
         setTotalCount(snapshot.data().count);
-      } catch (error: any) {
-        console.error("RAW ERROR:", error);
-
-        if (error instanceof Error) {
-          console.error("MESSAGE:", error.message);
-          console.error("NAME:", error.name);
-          console.error("STACK:", error.stack);
-        }
-
-        console.error("STRING:", String(error));
-
-        const e = error as any;
-
-        console.error("CODE:", e?.code);
-        console.error("CUSTOM DATA:", e?.customData);
-        console.error("FULL OBJECT:", e);
-
-        console.error("Firebase Context", {
-          uid: user?.uid,
-          authLoading,
-          projectId: db.app.options.projectId,
-          authDomain: db.app.options.authDomain,
-          path: `users/${user?.uid}/leads`,
-        });
+      } catch (err) {
+        console.error("Failed to fetch count:", err);
       }
     };
     fetchTotal();
@@ -111,15 +77,7 @@ export default function LeadsPage() {
 
     setIsLoadingLeads(true);
 
-    console.log("Executing Query:", {
-      collection: `users/${user.uid}/leads`,
-      operation: "onSnapshot",
-      statusFilter,
-      orderBy: "createdAt desc"
-    });
-
-    try {
-      const baseQ = collection(db, "users", user.uid, "leads");
+    const baseQ = collection(db, "users", user.uid, "leads");
       const constraints: any[] = [];
 
       if (statusFilter !== "all") {
@@ -149,61 +107,13 @@ export default function LeadsPage() {
         }
         
         setIsLoadingLeads(false);
-      }, (error: any) => {
-        console.error("RAW ERROR:", error);
-
-        if (error instanceof Error) {
-          console.error("MESSAGE:", error.message);
-          console.error("NAME:", error.name);
-          console.error("STACK:", error.stack);
-        }
-
-        console.error("STRING:", String(error));
-
-        const e = error as any;
-
-        console.error("CODE:", e?.code);
-        console.error("CUSTOM DATA:", e?.customData);
-        console.error("FULL OBJECT:", e);
-
-        console.error("Firebase Context", {
-          uid: user?.uid,
-          authLoading,
-          projectId: db.app.options.projectId,
-          authDomain: db.app.options.authDomain,
-          path: `users/${user?.uid}/leads`,
-        });
+      }, (error) => {
+        console.error("Firestore leads error:", error);
         toast.error("Failed to load leads");
         setIsLoadingLeads(false);
       });
 
       return () => unsubscribe();
-    } catch (error: any) {
-      console.error("RAW ERROR:", error);
-
-      if (error instanceof Error) {
-        console.error("MESSAGE:", error.message);
-        console.error("NAME:", error.name);
-        console.error("STACK:", error.stack);
-      }
-
-      console.error("STRING:", String(error));
-
-      const e = error as any;
-
-      console.error("CODE:", e?.code);
-      console.error("CUSTOM DATA:", e?.customData);
-      console.error("FULL OBJECT:", e);
-
-      console.error("Firebase Context", {
-        uid: user?.uid,
-        authLoading,
-        projectId: db.app.options.projectId,
-        authDomain: db.app.options.authDomain,
-        path: `users/${user?.uid}/leads`,
-      });
-      setIsLoadingLeads(false);
-    }
   }, [user, statusFilter, pageIndex]); // Excluded pageCursors on purpose to prevent loops
 
   const filteredLeads = useMemo(() => {

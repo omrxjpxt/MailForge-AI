@@ -87,30 +87,8 @@ export default function NewCampaignPage() {
         const snapshot = await getDocs(q);
         const fetchedTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
         setTemplates(fetchedTemplates);
-      } catch (error: any) {
-        console.error("RAW ERROR:", error);
-
-        if (error instanceof Error) {
-          console.error("MESSAGE:", error.message);
-          console.error("NAME:", error.name);
-          console.error("STACK:", error.stack);
-        }
-
-        console.error("STRING:", String(error));
-
-        const e = error as any;
-
-        console.error("CODE:", e?.code);
-        console.error("CUSTOM DATA:", e?.customData);
-        console.error("FULL OBJECT:", e);
-
-        console.error("Firebase Context", {
-          uid: user?.uid,
-          authLoading,
-          projectId: db.app.options.projectId,
-          authDomain: db.app.options.authDomain,
-          path: `users/${user?.uid}/templates`,
-        });
+      } catch (error) {
+        console.error("Failed to load templates:", error);
       } finally {
         setIsTemplatesLoading(false);
       }
@@ -191,29 +169,6 @@ export default function NewCampaignPage() {
       toast.success("Campaign launched successfully!");
       router.push("/campaigns");
     } catch (error: any) {
-      console.error("RAW ERROR:", error);
-
-      if (error instanceof Error) {
-        console.error("MESSAGE:", error.message);
-        console.error("NAME:", error.name);
-        console.error("STACK:", error.stack);
-      }
-
-      console.error("STRING:", String(error));
-
-      const e = error as any;
-
-      console.error("CODE:", e?.code);
-      console.error("CUSTOM DATA:", e?.customData);
-      console.error("FULL OBJECT:", e);
-
-      console.error("Firebase Context", {
-        uid: user?.uid,
-        authLoading,
-        projectId: db.app.options.projectId,
-        authDomain: db.app.options.authDomain,
-        path: `users/${user?.uid}/campaigns`,
-      });
       toast.error(error.message || "Failed to create campaign");
     } finally {
       setIsSaving(false);
@@ -233,29 +188,6 @@ export default function NewCampaignPage() {
       toast.success("Draft saved");
       router.push("/campaigns");
     } catch (error: any) {
-      console.error("RAW ERROR:", error);
-
-      if (error instanceof Error) {
-        console.error("MESSAGE:", error.message);
-        console.error("NAME:", error.name);
-        console.error("STACK:", error.stack);
-      }
-
-      console.error("STRING:", String(error));
-
-      const e = error as any;
-
-      console.error("CODE:", e?.code);
-      console.error("CUSTOM DATA:", e?.customData);
-      console.error("FULL OBJECT:", e);
-
-      console.error("Firebase Context", {
-        uid: user?.uid,
-        authLoading,
-        projectId: db.app.options.projectId,
-        authDomain: db.app.options.authDomain,
-        path: `users/${user?.uid}/campaigns`,
-      });
       toast.error("Failed to save draft");
     } finally {
       setIsSaving(false);
