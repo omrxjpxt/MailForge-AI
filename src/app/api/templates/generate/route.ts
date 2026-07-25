@@ -54,6 +54,7 @@ Rules:
   - Subject
   - Email Body
 - The email body must already be perfectly formatted.
+- Subject lines MUST be short, natural, properly capitalized (like a real human typed it quickly), and avoid awkward AI phrasing (e.g. use "Quick question about {{company}}" instead of "Exploring Synergies with {{company}}").
 - Use these placeholders whenever appropriate:
 
 {{firstName}}

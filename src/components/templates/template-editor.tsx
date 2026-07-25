@@ -10,9 +10,24 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/firebase/auth";
 import { createTemplate, updateTemplate } from "@/lib/firebase/templates";
 import { EmailTemplate, TemplateInput } from "@/types/template";
-import { Loader2, Wand2, X, Eye, Edit2 } from "lucide-react";
+import { Loader2, Wand2, X, Eye, Edit2, RotateCcw, PencilLine } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const LOADING_MESSAGES = [
+  "Writing subject...",
+  "Drafting email...",
+  "Optimizing CTA...",
+  "Generating tags...",
+];
+
+const SUGGESTIONS = [
+  "Sell an AI CRM",
+  "Cold outreach to SaaS founders",
+  "Follow-up after no reply",
+  "Recruit software engineers",
+  "Invite prospects to a webinar"
+];
 
 interface TemplateEditorProps {
   isOpen: boolean;
@@ -39,6 +54,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
   const [showAIPrompt, setShowAIPrompt] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
 
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   
@@ -59,7 +75,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
       });
       if (template.createdWithPrompt) {
         setAiPrompt(template.createdWithPrompt);
-        setShowAIPrompt(true);
+        setShowAIPrompt(false); // Collapsed by default if it already exists
       }
     } else {
       setFormData({
@@ -107,6 +123,16 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
     setFormData({ ...formData, tags: formData.tags?.filter(t => t !== tagToRemove) });
   };
 
+  // Progressive loading messages
+  useEffect(() => {
+    if (!isGenerating) return;
+    setLoadingMsgIdx(0);
+    const interval = setInterval(() => {
+      setLoadingMsgIdx(prev => (prev + 1) % LOADING_MESSAGES.length);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [isGenerating]);
+
   const handleGenerate = async () => {
     if (!aiPrompt.trim()) return toast.error("Please enter a prompt");
     
@@ -135,6 +161,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
       
       toast.success("Template generated!");
       setMode("edit");
+      setShowAIPrompt(false); // Collapse prompt box
       
       // Auto-scroll to the populated content
       setTimeout(() => {
@@ -182,33 +209,23 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
     return result;
   };
 
+  const hasGeneratedContent = !!formData.createdWithPrompt || !!formData.subject;
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="flex flex-col h-full w-full sm:max-w-xl p-0 gap-0">
         
-        <SheetHeader className="p-6 pb-2 shrink-0 border-b border-border bg-background z-10">
-          <div className="flex justify-between items-center w-full">
-            <div>
-              <SheetTitle>{template ? "Edit Template" : "Create Template"}</SheetTitle>
-              <SheetDescription>
-                Create highly converting email templates for your campaigns.
-              </SheetDescription>
-            </div>
-            <Tabs value={mode} onValueChange={(val) => setMode(val as "edit" | "preview")} className="w-[160px]">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="edit" className="text-xs">
-                  <Edit2 className="w-3 h-3 mr-1" /> Edit
-                </TabsTrigger>
-                <TabsTrigger value="preview" className="text-xs">
-                  <Eye className="w-3 h-3 mr-1" /> Preview
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+        <SheetHeader className="p-6 pb-4 shrink-0 border-b border-border bg-background z-10">
+          <SheetTitle>{template ? "Edit Template" : "Create Template"}</SheetTitle>
+          <SheetDescription>
+            Create highly converting email templates for your campaigns.
+          </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-          {!showAIPrompt ? (
+          
+          {/* AI Generator Block */}
+          {!showAIPrompt && !formData.createdWithPrompt ? (
             <Button 
               variant="outline" 
               className="w-full gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary shrink-0"
@@ -217,6 +234,37 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
               <Wand2 className="h-4 w-4" />
               Generate with Gemini AI
             </Button>
+          ) : !showAIPrompt && formData.createdWithPrompt ? (
+            <div className="flex flex-col gap-3 p-4 rounded-lg border border-primary/20 bg-primary/5 shrink-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Wand2 className="h-3 w-3 text-primary" />
+                    <span className="text-xs font-semibold text-primary uppercase tracking-wider">Generated from Prompt</span>
+                  </div>
+                  <p className="text-sm text-foreground/80 line-clamp-2">"{formData.createdWithPrompt}"</p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
+                <Button variant="ghost" size="sm" onClick={() => setShowAIPrompt(true)}>
+                  <PencilLine className="h-3 w-3 mr-2" />
+                  Edit Prompt
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleGenerate} disabled={isGenerating}>
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                      {LOADING_MESSAGES[loadingMsgIdx]}
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="h-3 w-3 mr-2" />
+                      Regenerate
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="flex flex-col gap-3 p-4 rounded-lg border border-primary/20 bg-primary/5 shrink-0">
               <Label htmlFor="ai-prompt" className="text-primary font-medium">Describe your ideal email</Label>
@@ -226,13 +274,40 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
                 rows={3}
-                className="bg-background resize-none"
+                className="bg-background resize-none focus-visible:ring-primary/20"
               />
+              
+              {!aiPrompt && (
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {SUGGESTIONS.map(sug => (
+                    <Badge 
+                      key={sug} 
+                      variant="outline" 
+                      className="cursor-pointer font-normal text-xs hover:bg-primary hover:text-primary-foreground transition-colors"
+                      onClick={() => setAiPrompt(sug)}
+                    >
+                      {sug}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 mt-2">
-                <Button variant="ghost" size="sm" onClick={() => setShowAIPrompt(false)}>Cancel</Button>
+                {formData.createdWithPrompt && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowAIPrompt(false)}>Cancel</Button>
+                )}
                 <Button size="sm" onClick={handleGenerate} disabled={isGenerating}>
-                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                  Generate
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      {LOADING_MESSAGES[loadingMsgIdx]}
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      {hasGeneratedContent ? "Regenerate" : "Generate"}
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -251,12 +326,14 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
 
           <div className="grid gap-3 shrink-0">
             <Label htmlFor="description">Description (Optional)</Label>
-            <Input 
+            <Textarea 
               id="description" 
               placeholder={mode === "preview" ? "Description" : "Briefly describe when to use this template..."} 
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               readOnly={mode === "preview"}
+              rows={2}
+              className="resize-none"
             />
           </div>
 
@@ -267,7 +344,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
                 <Badge key={tag} variant="secondary" className="gap-1 pr-1">
                   {tag}
                   {mode === "edit" && (
-                    <button onClick={() => removeTag(tag)} className="hover:bg-muted-foreground/20 rounded-full p-0.5">
+                    <button onClick={() => removeTag(tag)} className="hover:bg-muted-foreground/20 rounded-full p-0.5 transition-colors">
                       <X className="h-3 w-3" />
                     </button>
                   )}
@@ -284,43 +361,59 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
             )}
           </div>
 
-          <div className="border-t border-border pt-6 mt-2 grid gap-3 shrink-0">
-            <Label htmlFor="subject">Subject Line *</Label>
-            {mode === "edit" ? (
-              <Input 
-                id="subject" 
-                placeholder="e.g. Quick question about {{company}}" 
-                value={formData.subject}
-                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              />
-            ) : (
-              <div className="p-3 border rounded-md bg-muted/50 text-sm">
-                {formData.subject ? renderPreview(formData.subject) : <span className="text-muted-foreground">Subject preview...</span>}
-              </div>
-            )}
-          </div>
+          <div className="border-t border-border pt-6 mt-2 grid gap-4 shrink-0">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">Email Content</Label>
+              <Tabs value={mode} onValueChange={(val) => setMode(val as "edit" | "preview")} className="w-[160px]">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="edit" className="text-xs">
+                    <Edit2 className="w-3 h-3 mr-1" /> Edit
+                  </TabsTrigger>
+                  <TabsTrigger value="preview" className="text-xs">
+                    <Eye className="w-3 h-3 mr-1" /> Preview
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
-          <div className="grid gap-3 shrink-0">
-            <Label htmlFor="body">Email Body *</Label>
-            {mode === "edit" ? (
-              <>
-                <Textarea 
-                  id="body"
-                  ref={textareaRef}
-                  placeholder="Hi {{firstName}},&#10;&#10;I noticed..." 
-                  value={formData.body}
-                  onChange={handleTextareaChange}
-                  className="min-h-[200px] resize-none overflow-y-auto"
+            <div className="grid gap-3">
+              <Label htmlFor="subject">Subject Line *</Label>
+              {mode === "edit" ? (
+                <Input 
+                  id="subject" 
+                  placeholder="e.g. Quick question about {{company}}" 
+                  value={formData.subject}
+                  onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Use placeholders like <code className="bg-muted px-1 py-0.5 rounded">{"{{firstName}}"}</code> to personalize.
-                </p>
-              </>
-            ) : (
-              <div className="p-4 border rounded-md bg-muted/50 text-sm whitespace-pre-wrap min-h-[200px]">
-                {formData.body ? renderPreview(formData.body) : <span className="text-muted-foreground">Body preview...</span>}
-              </div>
-            )}
+              ) : (
+                <div className="p-3 border rounded-md bg-muted/50 text-sm font-medium">
+                  {formData.subject ? renderPreview(formData.subject) : <span className="text-muted-foreground">Subject preview...</span>}
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-3">
+              <Label htmlFor="body">Email Body *</Label>
+              {mode === "edit" ? (
+                <>
+                  <Textarea 
+                    id="body"
+                    ref={textareaRef}
+                    placeholder="Hi {{firstName}},&#10;&#10;I noticed..." 
+                    value={formData.body}
+                    onChange={handleTextareaChange}
+                    className="min-h-[200px] resize-none overflow-y-auto"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Use placeholders like <code className="bg-muted px-1 py-0.5 rounded text-foreground">{"{{firstName}}"}</code> to personalize.
+                  </p>
+                </>
+              ) : (
+                <div className="p-4 border rounded-md bg-muted/50 text-sm whitespace-pre-wrap min-h-[200px]">
+                  {formData.body ? renderPreview(formData.body) : <span className="text-muted-foreground">Body preview...</span>}
+                </div>
+              )}
+            </div>
           </div>
 
         </div>
