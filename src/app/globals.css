@@ -132,3 +132,24 @@
     @apply font-sans;
   }
 }
+
+/* Auth card shake animation */
+@keyframes auth-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-6px); }
+  30%, 70% { transform: translateX(6px); }
+}
+
+.auth-shake {
+  animation: auth-shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Auth alert fade-in */
+@keyframes auth-alert-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-alert-in {
+  animation: auth-alert-in 0.22s ease-out both;
+}

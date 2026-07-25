@@ -26,16 +26,32 @@ export async function GET(request: NextRequest) {
       'https://www.googleapis.com/auth/userinfo.email'
     ];
 
+    // Generate secure state
+    const state = crypto.randomUUID();
+
     const authorizationUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
       include_granted_scopes: true,
-      prompt: 'consent' // Force to get refresh token
+      prompt: 'consent', // Force to get refresh token
+      state: state
     });
 
-    return NextResponse.redirect(authorizationUrl);
+    const response = NextResponse.redirect(authorizationUrl);
+    
+    // Set HTTP-only cookie for state validation (10 minutes)
+    response.cookies.set('oauth_state', state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 10,
+      path: '/'
+    });
+
+    return response;
   } catch (error) {
     console.error("Error generating OAuth URL", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.redirect(new URL("/settings?tab=integrations&gmail_error=server_error", request.url));
   }
 }
+

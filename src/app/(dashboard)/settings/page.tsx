@@ -1,18 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Shield, User, Bell } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Mail, Shield, User, Bell, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import { auth, db } from "@/lib/firebase/client";
+import { doc, onSnapshot } from "firebase/firestore";
 
-export default function SettingsPage() {
+function SettingsContent() {
   const [isSaving, setIsSaving] = useState(false);
+  const [gmailConnected, setGmailConnected] = useState<boolean | null>(null);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const searchParams = useSearchParams();
+
+  const gmailError = searchParams.get("gmail_error");
+  const successMsg = searchParams.get("success");
+  const defaultTab = searchParams.get("tab") || "account";
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        const unsubscribeDoc = onSnapshot(doc(db, "users", user.uid), (doc) => {
+          if (doc.exists()) {
+            setGmailConnected(!!doc.data().gmailConnected);
+          } else {
+            setGmailConnected(false);
+          }
+        });
+        return () => unsubscribeDoc();
+      } else {
+        setGmailConnected(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleSave = () => {
     setIsSaving(true);
@@ -22,7 +51,38 @@ export default function SettingsPage() {
     }, 1000);
   };
 
+  const handleDisconnect = async () => {
+    setIsDisconnecting(true);
+    try {
+      const res = await fetch("/api/gmail/disconnect", { method: "POST" });
+      if (res.ok) {
+        toast.success("Gmail disconnected successfully");
+      } else {
+        throw new Error("Failed to disconnect");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to disconnect Gmail account.");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
 
+  const getGmailErrorDisplay = (error: string) => {
+    switch (error) {
+      case "access_denied":
+        return { title: "Gmail connection cancelled", desc: "You cancelled the Google authorization." };
+      case "invalid_state":
+        return { title: "Session expired", desc: "The authorization session expired or is invalid. Please try again." };
+      case "unauthorized_client":
+      case "app_not_verified":
+        return { title: "Not authorized", desc: "This Google account isn't authorized to access the application. If you're testing the app, ask the administrator to add your account as a Google OAuth test user." };
+      case "redirect_uri_mismatch":
+        return { title: "Configuration error", desc: "OAuth configuration is incorrect. Please contact the administrator." };
+      default:
+        return { title: "Gmail connection failed", desc: "We couldn't connect your Gmail account. Please try again." };
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-5xl">
@@ -31,7 +91,7 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">Manage your account, integrations, and preferences.</p>
       </div>
 
-      <Tabs defaultValue="account" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="mb-4 bg-muted/50 w-full sm:w-auto grid grid-cols-2 sm:flex">
           <TabsTrigger value="account" className="rounded-sm gap-2"><User className="h-4 w-4" /> Account</TabsTrigger>
           <TabsTrigger value="integrations" className="rounded-sm gap-2"><Mail className="h-4 w-4" /> Integrations</TabsTrigger>
@@ -87,15 +147,31 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-0 space-y-6">
+          {gmailError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>{getGmailErrorDisplay(gmailError).title}</AlertTitle>
+              <AlertDescription>{getGmailErrorDisplay(gmailError).desc}</AlertDescription>
+            </Alert>
+          )}
+
+          {successMsg === "gmail_connected" && (
+            <Alert className="border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertTitle>Success</AlertTitle>
+              <AlertDescription>Gmail account connected successfully.</AlertDescription>
+            </Alert>
+          )}
+
           <Card className="bg-card">
             <CardHeader>
               <CardTitle>Email Provider</CardTitle>
               <CardDescription>Connect your email account to send campaigns.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/20">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-border rounded-lg bg-muted/20 gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 bg-white rounded flex items-center justify-center border border-border">
+                  <div className="h-10 w-10 bg-white rounded flex items-center justify-center border border-border shrink-0">
                     <svg viewBox="0 0 24 24" className="h-6 w-6">
                       <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" fill="#EA4335" />
                       <path d="M16.91 16.774h3.818v4.226h-3.818zM16.91 5.31l1.528-1.145c1.618-1.214 3.927-.059 3.927 1.964v5.602l-5.455 5.043z" fill="#C5221F" />
@@ -106,12 +182,34 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <h4 className="font-medium text-sm">Google Workspace / Gmail</h4>
-                    <p className="text-xs text-muted-foreground">Not connected</p>
+                    {gmailConnected === null ? (
+                      <div className="flex items-center text-xs text-muted-foreground mt-1">
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" /> Checking...
+                      </div>
+                    ) : gmailConnected ? (
+                      <p className="text-xs text-green-500 flex items-center font-medium mt-1">
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Connected
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">Not connected</p>
+                    )}
                   </div>
                 </div>
-                <Button asChild>
-                  <a href="/api/gmail/auth">Connect</a>
-                </Button>
+                
+                {gmailConnected !== null && (
+                  gmailConnected ? (
+                    <Button variant="outline" onClick={handleDisconnect} disabled={isDisconnecting}>
+                      {isDisconnecting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Disconnect
+                    </Button>
+                  ) : (
+                    <Button asChild>
+                      <a href="/api/gmail/auth">
+                        {gmailError ? "Try Again" : "Connect"}
+                      </a>
+                    </Button>
+                  )
+                )}
               </div>
             </CardContent>
           </Card>
@@ -189,3 +287,12 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-6 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+      <SettingsContent />
+    </Suspense>
+  );
+}
+

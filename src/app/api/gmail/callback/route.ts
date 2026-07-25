@@ -16,10 +16,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    const code = request.nextUrl.searchParams.get("code");
+    const searchParams = request.nextUrl.searchParams;
+    const error = searchParams.get("error");
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    const oauthStateCookie = request.cookies.get("oauth_state")?.value;
+
+    // 1. Handle OAuth errors from Google (e.g., access_denied)
+    if (error) {
+      console.warn("Gmail OAuth error returned from Google:", error);
+      const response = NextResponse.redirect(new URL(`/settings?tab=integrations&gmail_error=${error}`, request.url));
+      response.cookies.delete("oauth_state");
+      return response;
+    }
+
+    // 2. Validate state parameter to prevent CSRF
+    if (!state || !oauthStateCookie || state !== oauthStateCookie) {
+      console.warn("Gmail OAuth state mismatch or missing");
+      const response = NextResponse.redirect(new URL("/settings?tab=integrations&gmail_error=invalid_state", request.url));
+      response.cookies.delete("oauth_state");
+      return response;
+    }
     
     if (!code) {
-      return NextResponse.redirect(new URL("/settings?error=missing_code", request.url));
+      return NextResponse.redirect(new URL("/settings?tab=integrations&gmail_error=missing_code", request.url));
     }
 
     const oauth2Client = new google.auth.OAuth2(
@@ -39,9 +59,21 @@ export async function GET(request: NextRequest) {
       }, { merge: true });
     }
 
-    return NextResponse.redirect(new URL("/settings?success=gmail_connected", request.url));
-  } catch (error) {
+    const response = NextResponse.redirect(new URL("/settings?tab=integrations&success=gmail_connected", request.url));
+    response.cookies.delete("oauth_state");
+    return response;
+  } catch (error: any) {
     console.error("Error in Gmail callback:", error);
-    return NextResponse.redirect(new URL("/settings?error=auth_failed", request.url));
+    
+    // Check for specific token errors
+    let errorCode = "oauth_failed";
+    if (error.response?.data?.error) {
+       errorCode = error.response.data.error;
+    }
+    
+    const response = NextResponse.redirect(new URL(`/settings?tab=integrations&gmail_error=${errorCode}`, request.url));
+    response.cookies.delete("oauth_state");
+    return response;
   }
 }
+
