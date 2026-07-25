@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ function SettingsContent() {
   const [gmailConnected, setGmailConnected] = useState<boolean | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const gmailError = searchParams.get("gmail_error");
   const successMsg = searchParams.get("success");
@@ -43,6 +44,16 @@ function SettingsContent() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (successMsg === "gmail_connected") {
+      toast.success("Gmail connected successfully.");
+      router.replace("/settings?tab=integrations");
+    } else if (gmailError && gmailConnected === true) {
+      // Clean up stale error if already connected
+      router.replace("/settings?tab=integrations");
+    }
+  }, [successMsg, gmailError, gmailConnected, router]);
+
   const handleSave = () => {
     setIsSaving(true);
     setTimeout(() => {
@@ -57,6 +68,7 @@ function SettingsContent() {
       const res = await fetch("/api/gmail/disconnect", { method: "POST" });
       if (res.ok) {
         toast.success("Gmail disconnected successfully");
+        router.replace("/settings?tab=integrations"); // clean any leftover params
       } else {
         throw new Error("Failed to disconnect");
       }
@@ -147,19 +159,11 @@ function SettingsContent() {
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-0 space-y-6">
-          {gmailError && (
+          {gmailError && !gmailConnected && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>{getGmailErrorDisplay(gmailError).title}</AlertTitle>
               <AlertDescription>{getGmailErrorDisplay(gmailError).desc}</AlertDescription>
-            </Alert>
-          )}
-
-          {successMsg === "gmail_connected" && (
-            <Alert className="border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400">
-              <CheckCircle2 className="h-4 w-4" />
-              <AlertTitle>Success</AlertTitle>
-              <AlertDescription>Gmail account connected successfully.</AlertDescription>
             </Alert>
           )}
 
