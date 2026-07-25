@@ -1,11 +1,28 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PerformanceChart } from "@/components/dashboard/performance-chart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Minus, Loader2 } from "lucide-react";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 
-// Server Component (can fetch real data later)
 export default function AnalyticsPage() {
+  const { isLoading, metrics, performanceData } = useDashboardData();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Calculate percentages for the funnel
+  const sent = metrics.totalEmailsSent;
+  const deliveredPerc = sent > 0 ? (metrics.totalDelivered / sent) * 100 : 0;
+  const openedPerc = sent > 0 ? (metrics.totalOpened / sent) * 100 : 0;
+  const repliedPerc = sent > 0 ? (metrics.totalReplied / sent) * 100 : 0;
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -29,37 +46,37 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard 
           title="Total Sent" 
-          value="12,450" 
-          trend="+14.2%" 
-          trendDirection="up" 
-          subtitle="vs previous period" 
+          value={metrics.totalEmailsSent.toLocaleString()} 
+          trend="0.0%" 
+          trendDirection="flat" 
+          subtitle="Lifetime" 
         />
         <MetricCard 
           title="Avg. Open Rate" 
-          value="48.2%" 
-          trend="+2.1%" 
-          trendDirection="up" 
-          subtitle="vs previous period" 
+          value={`${metrics.avgOpenRate.toFixed(1)}%`} 
+          trend="0.0%" 
+          trendDirection="flat" 
+          subtitle="Lifetime" 
         />
         <MetricCard 
           title="Avg. Reply Rate" 
-          value="8.4%" 
-          trend="-0.5%" 
-          trendDirection="down" 
-          subtitle="vs previous period" 
+          value={`${metrics.avgReplyRate.toFixed(1)}%`} 
+          trend="0.0%" 
+          trendDirection="flat" 
+          subtitle="Lifetime" 
         />
         <MetricCard 
           title="Bounce Rate" 
-          value="1.2%" 
+          value={`${metrics.bounceRate.toFixed(1)}%`} 
           trend="0.0%" 
           trendDirection="flat" 
-          subtitle="vs previous period" 
+          subtitle="Lifetime" 
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="col-span-2">
-          <PerformanceChart />
+          <PerformanceChart data={performanceData} />
         </div>
         <Card className="bg-card">
           <CardHeader>
@@ -68,11 +85,10 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent className="px-6">
             <div className="space-y-6">
-              <FunnelStep label="Sent" count={12450} percentage={100} color="bg-blue-500" />
-              <FunnelStep label="Delivered" count={12300} percentage={98.8} color="bg-indigo-500" />
-              <FunnelStep label="Opened" count={5930} percentage={47.6} color="bg-purple-500" />
-              <FunnelStep label="Replied" count={1045} percentage={8.4} color="bg-primary" />
-              <FunnelStep label="Positive" count={320} percentage={2.6} color="bg-green-500" />
+              <FunnelStep label="Sent" count={sent} percentage={sent > 0 ? 100 : 0} color="bg-blue-500" />
+              <FunnelStep label="Delivered" count={metrics.totalDelivered} percentage={deliveredPerc} color="bg-indigo-500" />
+              <FunnelStep label="Opened" count={metrics.totalOpened} percentage={openedPerc} color="bg-purple-500" />
+              <FunnelStep label="Replied" count={metrics.totalReplied} percentage={repliedPerc} color="bg-primary" />
             </div>
           </CardContent>
         </Card>
@@ -126,11 +142,11 @@ function FunnelStep({ label, count, percentage, color }: FunnelStepProps) {
         <span className="font-medium">{label}</span>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">{count.toLocaleString()}</span>
-          <span className="font-bold w-12 text-right">{percentage}%</span>
+          <span className="font-bold w-12 text-right">{percentage.toFixed(1)}%</span>
         </div>
       </div>
       <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full`} style={{ width: `${percentage}%` }} />
+        <div className={`h-full ${color} rounded-full`} style={{ width: `${percentage.toFixed(1)}%` }} />
       </div>
     </div>
   );

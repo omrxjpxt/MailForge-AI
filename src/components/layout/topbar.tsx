@@ -15,9 +15,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { auth } from "@/lib/firebase/client";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 
 export function Topbar() {
   const router = useRouter();
+  const { metrics, isLoading } = useDashboardData();
 
   const handleLogout = async () => {
     try {
@@ -49,12 +51,17 @@ export function Topbar() {
 
       <div className="flex items-center gap-4">
         {/* Usage Badge */}
-        <div className="hidden md:flex items-center gap-2 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
-          <span>Usage: 6/10 Sent</span>
-          <div className="h-2 w-16 overflow-hidden rounded-full bg-secondary">
-            <div className="h-full bg-primary" style={{ width: "60%" }} />
+        {!isLoading && (
+          <div className="hidden md:flex items-center gap-2 rounded-full border border-border bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+            <span>Usage: {metrics.emailsSentToday}/{metrics.dailyLimit} Sent</span>
+            <div className="h-2 w-16 overflow-hidden rounded-full bg-secondary">
+              <div 
+                className={`h-full ${metrics.emailsSentToday >= metrics.dailyLimit ? 'bg-destructive' : 'bg-primary'}`} 
+                style={{ width: `${Math.min((metrics.emailsSentToday / metrics.dailyLimit) * 100, 100)}%` }} 
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <Button variant="ghost" size="icon" className="relative text-muted-foreground">
           <Bell className="h-5 w-5" />

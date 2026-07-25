@@ -1,0 +1,197 @@
+import { useState, useEffect } from "react";
+import { collection, query, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { useAuth } from "@/lib/firebase/auth";
+import { Campaign } from "@/types/campaign";
+import { Lead } from "@/types/lead";
+
+export interface DashboardData {
+  isLoading: boolean;
+  error: Error | null;
+  metrics: {
+    emailsSentToday: number;
+    dailyLimit: number;
+    pendingLeads: number;
+    totalCampaigns: number;
+    activeCampaigns: number;
+    totalEmailsSent: number;
+    avgOpenRate: number;
+    avgReplyRate: number;
+    bounceRate: number;
+    totalDelivered: number;
+    totalOpened: number;
+    totalReplied: number;
+  };
+  recentCampaigns: Campaign[];
+  latestChanges: { id: string; title: string; time: string; type: "campaign" | "lead"; timestamp: number; color: string }[];
+  performanceData: { name: string; sent: number; replies: number }[];
+}
+
+export function useDashboardData(): DashboardData {
+  const { user } = useAuth();
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [dailyLimit, setDailyLimit] = useState<number>(50); // Default to Free plan
+
+  useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchSettings = async () => {
+      try {
+        const settingsDoc = await getDoc(doc(db, "users", user.uid, "settings", "default"));
+        if (settingsDoc.exists()) {
+          setDailyLimit(settingsDoc.data().dailyLimit || 50);
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+
+    fetchSettings();
+
+    const unsubscribeCampaigns = onSnapshot(
+      query(collection(db, "users", user.uid, "campaigns")),
+      (snapshot) => {
+        const camps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Campaign));
+        setCampaigns(camps);
+      },
+      (err) => setError(err)
+    );
+
+    const unsubscribeLeads = onSnapshot(
+      query(collection(db, "users", user.uid, "leads")),
+      (snapshot) => {
+        const lds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead));
+        setLeads(lds);
+      },
+      (err) => setError(err)
+    );
+
+    return () => {
+      unsubscribeCampaigns();
+      unsubscribeLeads();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (user && campaigns && leads) {
+      // Data is mostly loaded when we have the snapshot, even if empty.
+      setIsLoading(false);
+    }
+  }, [user, campaigns, leads]);
+
+  // Derived Metrics
+  const todayDateString = new Date().toISOString().split("T")[0];
+  
+  let emailsSentToday = 0;
+  let totalEmailsSent = 0;
+  let totalDelivered = 0; // Approximate with sent minus bounces for now
+  let totalOpened = 0;
+  let totalReplied = 0;
+  let totalBounces = 0;
+  
+  let activeCampaigns = 0;
+
+  campaigns.forEach(camp => {
+    if (camp.dailyEmailsSentDate === todayDateString) {
+      emailsSentToday += (camp.dailyEmailsSent || 0);
+    }
+    totalEmailsSent += (camp.emailsSent || 0);
+    totalDelivered += ((camp.emailsSent || 0) - (camp.bounces || 0));
+    totalOpened += (camp.opens || 0);
+    totalReplied += (camp.replies || 0);
+    totalBounces += (camp.bounces || 0);
+    
+    if (camp.status === "Running") {
+      activeCampaigns++;
+    }
+  });
+
+  const pendingLeads = leads.filter(l => l.status === "New").length;
+  
+  const avgOpenRate = totalEmailsSent > 0 ? ((totalOpened / totalEmailsSent) * 100) : 0;
+  const avgReplyRate = totalEmailsSent > 0 ? ((totalReplied / totalEmailsSent) * 100) : 0;
+  const bounceRate = totalEmailsSent > 0 ? ((totalBounces / totalEmailsSent) * 100) : 0;
+
+  // Recent Campaigns (top 5)
+  const recentCampaigns = [...campaigns]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, 5);
+
+  // Latest Changes
+  const latestChangesRaw: any[] = [];
+  
+  campaigns.forEach(camp => {
+    latestChangesRaw.push({
+      id: `camp-${camp.id}`,
+      title: `Campaign "${camp.name}" updated`,
+      time: new Date(camp.updatedAt).toLocaleString(),
+      timestamp: camp.updatedAt,
+      type: "campaign",
+      color: "bg-blue-500"
+    });
+  });
+  
+  leads.forEach(lead => {
+    latestChangesRaw.push({
+      id: `lead-${lead.id}`,
+      title: `Lead "${lead.email}" updated`,
+      time: new Date(lead.updatedAt).toLocaleString(),
+      timestamp: lead.updatedAt,
+      type: "lead",
+      color: "bg-green-500"
+    });
+  });
+
+  const latestChanges = latestChangesRaw
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 5);
+
+  // Performance Chart (Trailing 7 days)
+  const performanceData = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    // Real implementation would group historical `emailHistory` logs by date.
+    // For now, we return empty data if no campaigns, or a mocked zeroed set to show the empty chart.
+    // We can distribute the total sent/replies evenly over the last 7 days for the demo based on the active campaigns if we don't have historical logs.
+    // However, since we need REAL data, and we don't have historical daily logs in the schema yet, we will just return empty if total is 0.
+    performanceData.push({
+      name: d.toLocaleDateString("en-US", { weekday: "short" }),
+      sent: 0,
+      replies: 0
+    });
+  }
+  
+  // NOTE: If we want to populate `performanceData` properly, we need to query the `emailHistory` collection (if it exists) by date.
+  // We'll leave it as zeroed out for now since the user wants real data. If no historical logs exist, it should be empty/zero.
+
+  return {
+    isLoading,
+    error,
+    metrics: {
+      emailsSentToday,
+      dailyLimit,
+      pendingLeads,
+      totalCampaigns: campaigns.length,
+      activeCampaigns,
+      totalEmailsSent,
+      avgOpenRate,
+      avgReplyRate,
+      bounceRate,
+      totalDelivered,
+      totalOpened,
+      totalReplied
+    },
+    recentCampaigns,
+    latestChanges,
+    performanceData,
+  };
+}

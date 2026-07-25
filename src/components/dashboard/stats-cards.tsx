@@ -3,8 +3,14 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Send, Clock, Users, Layers } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { DashboardData } from "@/hooks/use-dashboard-data";
 
-export function StatsCards() {
+interface StatsCardsProps {
+  metrics: DashboardData["metrics"];
+}
+
+export function StatsCards({ metrics }: StatsCardsProps) {
+  const percentageSent = Math.min((metrics.emailsSentToday / metrics.dailyLimit) * 100, 100);
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card className="bg-card">
@@ -15,8 +21,8 @@ export function StatsCards() {
               <Send className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
-              <div className="text-2xl font-bold">6/10</div>
-              <Progress value={60} className="mt-2 h-1.5" />
+              <div className="text-2xl font-bold">{metrics.emailsSentToday}/{metrics.dailyLimit}</div>
+              <Progress value={percentageSent} className="mt-2 h-1.5" />
             </div>
           </div>
         </CardContent>
@@ -30,8 +36,8 @@ export function StatsCards() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
-              <div className="text-2xl font-bold">4</div>
-              <p className="mt-1 text-xs text-primary font-medium">Next batch in 2h</p>
+              <div className="text-2xl font-bold">{Math.max(metrics.dailyLimit - metrics.emailsSentToday, 0)}</div>
+              <p className="mt-1 text-xs text-muted-foreground">Emails left today</p>
             </div>
           </div>
         </CardContent>
@@ -45,8 +51,8 @@ export function StatsCards() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
-              <div className="text-2xl font-bold">1,248</div>
-              <p className="mt-1 text-xs text-muted-foreground">+12 today</p>
+              <div className="text-2xl font-bold">{metrics.pendingLeads.toLocaleString()}</div>
+              <p className="mt-1 text-xs text-muted-foreground">Awaiting outreach</p>
             </div>
           </div>
         </CardContent>
@@ -60,8 +66,8 @@ export function StatsCards() {
               <Layers className="h-4 w-4 text-muted-foreground" />
             </div>
             <div>
-              <div className="text-2xl font-bold">12</div>
-              <p className="mt-1 text-xs text-muted-foreground">4 active</p>
+              <div className="text-2xl font-bold">{metrics.totalCampaigns}</div>
+              <p className="mt-1 text-xs text-muted-foreground">{metrics.activeCampaigns} active</p>
             </div>
           </div>
         </CardContent>
