@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,11 +9,65 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing ID token" }, { status: 400 });
     }
 
+    // Verify ID token to get user profile data
+    const decodedIdToken = await adminAuth.verifyIdToken(idToken);
+    const { uid, email, name, picture } = decodedIdToken;
+
+    // Sync profile to Firestore
+    const userRef = adminDb.collection("users").doc(uid);
+    const userSnap = await userRef.get();
+
+    let firstName = "";
+    let lastName = "";
+    if (name) {
+      const parts = name.trim().split(" ");
+      firstName = parts[0] || "";
+      lastName = parts.slice(1).join(" ") || "";
+    } else {
+      // Fallback if no name, use email prefix
+      firstName = email ? email.split("@")[0] : "";
+    }
+
+    const updates: any = {};
+    if (!userSnap.exists) {
+      updates.firstName = firstName;
+      updates.lastName = lastName;
+      updates.email = email || "";
+      updates.photoURL = picture || null;
+      updates.createdAt = new Date().toISOString();
+      updates.updatedAt = new Date().toISOString();
+      await userRef.set(updates);
+    } else {
+      const data = userSnap.data() || {};
+      let needsUpdate = false;
+
+      if (!data.firstName && firstName) {
+        updates.firstName = firstName;
+        needsUpdate = true;
+      }
+      if (!data.lastName && lastName) {
+        updates.lastName = lastName;
+        needsUpdate = true;
+      }
+      if (!data.photoURL && picture) {
+        updates.photoURL = picture;
+        needsUpdate = true;
+      }
+      if (data.email !== email) {
+        updates.email = email || "";
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        updates.updatedAt = new Date().toISOString();
+        await userRef.update(updates);
+      }
+    }
+
     // Set session expiration to 5 days.
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
 
-    // Create the session cookie. This will also verify the ID token in the process.
-    // The session cookie will have the same claims as the ID token.
+    // Create the session cookie.
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
 
     const options = {
