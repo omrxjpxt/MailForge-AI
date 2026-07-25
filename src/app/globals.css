@@ -153,3 +153,13 @@
 .auth-alert-in {
   animation: auth-alert-in 0.22s ease-out both;
 }
+/* Hide native number controls */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
