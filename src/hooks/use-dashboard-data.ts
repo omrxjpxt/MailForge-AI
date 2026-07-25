@@ -128,7 +128,7 @@ export function useDashboardData(): DashboardData {
     .slice(0, 5);
 
   // Latest Changes
-  const latestChangesRaw: unknown[] = [];
+  const latestChangesRaw: { id: string; title: string; time: string; type: "campaign" | "lead"; timestamp: number; color: string; }[] = [];
   
   campaigns.forEach(camp => {
     latestChangesRaw.push({

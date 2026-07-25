@@ -13,7 +13,7 @@ import { Mail, Shield, User, Bell, AlertCircle, Loader2, CheckCircle2 } from "lu
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase/client";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function SettingsContent() {
@@ -26,6 +26,12 @@ function SettingsContent() {
     lastName: "",
     email: ""
   });
+  const [notifications, setNotifications] = useState({
+    positiveReplies: false,
+    campaignCompleted: false,
+    dailySummary: false,
+  });
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -50,6 +56,7 @@ function SettingsContent() {
 
   useEffect(() => {
     let unsubscribeDoc: (() => void) | undefined;
+    let unsubscribeSettings: (() => void) | undefined;
 
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       if (user) {
@@ -79,23 +86,71 @@ function SettingsContent() {
             setProfileLoading(false);
           }
         );
+        
+        unsubscribeSettings = onSnapshot(
+          doc(db, "users", user.uid, "settings", "default"),
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              if (data.notifications) {
+                setNotifications({
+                  positiveReplies: !!data.notifications.positiveReplies,
+                  campaignCompleted: !!data.notifications.campaignCompleted,
+                  dailySummary: !!data.notifications.dailySummary,
+                });
+              }
+            }
+            setNotificationsLoading(false);
+          },
+          (error) => {
+            console.error("Firestore error on settings listener:", error);
+            setNotificationsLoading(false);
+          }
+        );
       } else {
         setGmailConnected(false);
         setProfileLoading(false);
+        setNotificationsLoading(false);
         if (unsubscribeDoc) {
           unsubscribeDoc();
           unsubscribeDoc = undefined;
+        }
+        if (unsubscribeSettings) {
+          unsubscribeSettings();
+          unsubscribeSettings = undefined;
         }
       }
     });
 
     return () => {
       unsubscribeAuth();
-      if (unsubscribeDoc) {
-        unsubscribeDoc();
-      }
+      if (unsubscribeDoc) unsubscribeDoc();
+      if (unsubscribeSettings) unsubscribeSettings();
     };
   }, []);
+
+  const handleNotificationChange = async (key: keyof typeof notifications, checked: boolean) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    
+    // Optimistic update
+    const newSettings = { ...notifications, [key]: checked };
+    setNotifications(newSettings);
+    
+    try {
+      await setDoc(doc(db, "users", user.uid, "settings", "default"), {
+        notifications: {
+          [key]: checked
+        }
+      }, { merge: true });
+      toast.success("Notification settings updated.");
+    } catch (error) {
+      console.error("Failed to update notifications:", error);
+      toast.error("Failed to update settings.");
+      // Revert optimistic update
+      setNotifications(notifications);
+    }
+  };
 
   useEffect(() => {
     if (successMsg === "gmail_connected") {
@@ -342,16 +397,19 @@ function SettingsContent() {
         <TabsContent value="billing" className="mt-0 space-y-6">
           <Card className="bg-card">
             <CardHeader>
-              <CardTitle>Subscription Plan</CardTitle>
-              <CardDescription>You are currently on the Pro plan.</CardDescription>
+              <CardTitle>Billing</CardTitle>
+              <CardDescription>Manage your subscription and billing details.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between p-4 border border-primary/20 bg-primary/5 rounded-lg">
-                <div>
-                  <h4 className="font-bold text-lg text-primary">MailForge Pro</h4>
-                  <p className="text-sm text-muted-foreground">$49/month • Renews on Aug 15, 2026</p>
+              <div className="flex flex-col items-center justify-center p-8 text-center border border-border bg-muted/20 rounded-lg">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6 text-primary" />
                 </div>
-                <Button variant="outline">Manage Subscription</Button>
+                <h4 className="font-semibold text-lg mb-2">Coming Soon</h4>
+                <p className="text-sm text-muted-foreground max-w-[400px] mb-6">
+                  Stripe billing has not been configured yet. Subscription management will become available once billing is enabled.
+                </p>
+                <Button variant="outline" disabled>Coming Soon</Button>
               </div>
             </CardContent>
           </Card>
@@ -364,29 +422,48 @@ function SettingsContent() {
               <CardDescription>Choose what alerts you want to receive.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Positive Replies</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when a prospect replies positively.</p>
+              {notificationsLoading ? (
+                <div className="space-y-6">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
                 </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Campaign Completion</Label>
-                  <p className="text-sm text-muted-foreground">Get notified when a campaign finishes sending.</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label className="text-base">Daily Summary</Label>
-                  <p className="text-sm text-muted-foreground">Receive a daily digest of your outreach stats.</p>
-                </div>
-                <Switch />
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Positive Replies</Label>
+                      <p className="text-sm text-muted-foreground">Get notified when a prospect replies positively.</p>
+                    </div>
+                    <Switch 
+                      checked={notifications.positiveReplies} 
+                      onCheckedChange={(checked) => handleNotificationChange("positiveReplies", checked)} 
+                    />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Campaign Completion</Label>
+                      <p className="text-sm text-muted-foreground">Get notified when a campaign finishes sending.</p>
+                    </div>
+                    <Switch 
+                      checked={notifications.campaignCompleted} 
+                      onCheckedChange={(checked) => handleNotificationChange("campaignCompleted", checked)} 
+                    />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base">Daily Summary</Label>
+                      <p className="text-sm text-muted-foreground">Receive a daily digest of your outreach stats.</p>
+                    </div>
+                    <Switch 
+                      checked={notifications.dailySummary} 
+                      onCheckedChange={(checked) => handleNotificationChange("dailySummary", checked)} 
+                    />
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
