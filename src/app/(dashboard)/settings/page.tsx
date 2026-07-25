@@ -13,12 +13,19 @@ import { Mail, Shield, User, Bell, AlertCircle, Loader2, CheckCircle2 } from "lu
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase/client";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function SettingsContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [gmailConnected, setGmailConnected] = useState<boolean | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState({
+    firstName: "",
+    lastName: "",
+    email: ""
+  });
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -29,16 +36,29 @@ function SettingsContent() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        const unsubscribeDoc = onSnapshot(doc(db, "users", user.uid), (doc) => {
-          if (doc.exists()) {
-            setGmailConnected(!!doc.data().gmailConnected);
+        const unsubscribeDoc = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setGmailConnected(!!data.gmailConnected);
+            setUserProfile({
+              firstName: data.firstName || "",
+              lastName: data.lastName || "",
+              email: user.email || ""
+            });
           } else {
             setGmailConnected(false);
+            setUserProfile({
+              firstName: "",
+              lastName: "",
+              email: user.email || ""
+            });
           }
+          setProfileLoading(false);
         });
         return () => unsubscribeDoc();
       } else {
         setGmailConnected(false);
+        setProfileLoading(false);
       }
     });
     return () => unsubscribe();
@@ -54,12 +74,23 @@ function SettingsContent() {
     }
   }, [successMsg, gmailError, gmailConnected, router]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!auth.currentUser) return;
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      await updateDoc(userRef, {
+        firstName: userProfile.firstName,
+        lastName: userProfile.lastName,
+        updatedAt: new Date().toISOString()
+      });
       toast.success("Settings saved successfully");
-    }, 1000);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save settings");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDisconnect = async () => {
@@ -118,21 +149,50 @@ function SettingsContent() {
               <CardDescription>Update your personal information.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" defaultValue="Om" />
+              {profileLoading ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" defaultValue="" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="om@example.com" disabled />
-                <p className="text-xs text-muted-foreground">To change your email, please contact support.</p>
-              </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input 
+                        id="firstName" 
+                        value={userProfile.firstName} 
+                        onChange={(e) => setUserProfile({...userProfile, firstName: e.target.value})} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input 
+                        id="lastName" 
+                        value={userProfile.lastName} 
+                        onChange={(e) => setUserProfile({...userProfile, lastName: e.target.value})} 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input id="email" type="email" value={userProfile.email || "Unable to load email"} disabled />
+                    <p className="text-xs text-muted-foreground">To change your email, please contact support.</p>
+                  </div>
+                </>
+              )}
             </CardContent>
             <CardFooter className="border-t border-border pt-6">
               <Button onClick={handleSave} disabled={isSaving}>
@@ -220,18 +280,28 @@ function SettingsContent() {
           
           <Card className="bg-card">
             <CardHeader>
-              <CardTitle>API Keys</CardTitle>
-              <CardDescription>Manage keys for external services.</CardDescription>
+              <CardTitle>AI Provider</CardTitle>
+              <CardDescription>Powered by Google Gemini for intelligent email generation.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="gemini">Gemini API Key</Label>
-                <div className="flex gap-2">
-                  <Input id="gemini" type="password" value="*************************" disabled />
-                  <Button variant="outline">Update</Button>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-border rounded-lg bg-muted/20 gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 bg-white rounded flex items-center justify-center border border-border shrink-0">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6">
+                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="#4285F4" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm">Gemini AI</h4>
+                    <p className="text-xs text-green-500 flex items-center font-medium mt-1">
+                      <CheckCircle2 className="h-3 w-3 mr-1" /> Connected
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">Used for AI email generation and personalized drafting.</p>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Used for AI email generation and personalized drafting. This integration is managed automatically by the application.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
