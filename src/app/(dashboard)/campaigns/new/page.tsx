@@ -33,6 +33,7 @@ export default function NewCampaignPage() {
   
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
+  const [activeTabId, setActiveTabId] = useState<string>("");
 
   const {
     register,
@@ -66,6 +67,12 @@ export default function NewCampaignPage() {
   const formSteps = watch("steps") || [];
 
   useEffect(() => {
+    if (!activeTabId && steps.length > 0) {
+      setActiveTabId(steps[0].id);
+    }
+  }, [steps, activeTabId]);
+
+  useEffect(() => {
     if (authLoading || !user) return;
     
     const fetchTemplates = async () => {
@@ -75,13 +82,14 @@ export default function NewCampaignPage() {
 
         const q = query(
           collection(db, "users", user.uid, "templates"),
-          orderBy("createdAt", "desc")
+          orderBy("updatedAt", "desc")
         );
         const snapshot = await getDocs(q);
         const fetchedTemplates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
         setTemplates(fetchedTemplates);
       } catch (error) {
         console.error("Failed to load templates:", error);
+        toast.error("Unable to load templates.");
       } finally {
         setIsTemplatesLoading(false);
       }
@@ -134,10 +142,23 @@ export default function NewCampaignPage() {
     if (!template) return;
     
     setValue("templateId", templateId);
-    // Snapshot template to step 1
-    setValue("steps.0.subject", template.subject);
-    setValue("steps.0.body", template.body);
-    toast.success("Template applied to Step 1");
+    
+    const stepIndex = steps.findIndex((s) => s.id === activeTabId) !== -1 
+      ? steps.findIndex((s) => s.id === activeTabId) 
+      : 0;
+      
+    const currentSubject = watch(`steps.${stepIndex}.subject`);
+    const currentBody = watch(`steps.${stepIndex}.body`);
+    
+    if (currentSubject || currentBody) {
+      if (!window.confirm("Replace current content?")) {
+        return;
+      }
+    }
+    
+    setValue(`steps.${stepIndex}.subject`, template.subject);
+    setValue(`steps.${stepIndex}.body`, template.body);
+    toast.success(`Template applied to Step ${stepIndex + 1}`);
   };
 
   const onSubmit = async (data: any) => {
@@ -329,16 +350,36 @@ export default function NewCampaignPage() {
                 <CardDescription>Write your emails, use templates, or let AI generate them.</CardDescription>
               </div>
               <div className="flex items-center gap-2">
-                <Select disabled={isTemplatesLoading} onValueChange={handleTemplateSelect}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Use Template..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map(t => (
-                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {templates.length === 0 && !isTemplatesLoading ? (
+                  <div className="flex flex-col items-start gap-1">
+                    <Select disabled>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="No templates available" />
+                      </SelectTrigger>
+                    </Select>
+                    <Link href="/templates" className="text-xs text-primary hover:underline px-1">
+                      Create your first template
+                    </Link>
+                  </div>
+                ) : (
+                  <Select disabled={isTemplatesLoading} onValueChange={handleTemplateSelect}>
+                    <SelectTrigger className="w-[220px]">
+                      <SelectValue placeholder="Use Template..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map(t => (
+                        <SelectItem key={t.id} value={t.id}>
+                          <div className="flex flex-col text-left py-1">
+                            <span className="font-medium">{t.name}</span>
+                            <span className="text-xs text-muted-foreground truncate max-w-[180px] mt-0.5">
+                              {t.subject}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
                 <Button 
                   variant="secondary" 
@@ -353,7 +394,7 @@ export default function NewCampaignPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Tabs defaultValue={steps[0]?.id || "step1"}>
+            <Tabs value={activeTabId} onValueChange={setActiveTabId}>
               <TabsList className="w-full justify-start overflow-x-auto">
                 {steps.map((field, index) => (
                   <TabsTrigger key={field.id} value={field.id}>
