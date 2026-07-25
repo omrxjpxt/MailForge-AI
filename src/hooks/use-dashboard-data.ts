@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
-import { collection, query, onSnapshot, doc, getDoc } from "firebase/firestore";
+import { collection, query, onSnapshot, doc, getDoc, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/lib/firebase/auth";
 import { Campaign } from "@/types/campaign";
 import { Lead } from "@/types/lead";
+import { EmailHistory } from "@/types/history";
 
 export interface DashboardData {
   isLoading: boolean;
   error: Error | null;
+  firstName: string;
   metrics: {
     emailsSentToday: number;
     dailyLimit: number;
@@ -35,7 +37,9 @@ export function useDashboardData(): DashboardData {
   
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [recentHistory, setRecentHistory] = useState<EmailHistory[]>([]);
   const [dailyLimit, setDailyLimit] = useState<number>(50); // Default to Free plan
+  const [firstName, setFirstName] = useState("");
 
   useEffect(() => {
     if (!user) {
@@ -49,6 +53,11 @@ export function useDashboardData(): DashboardData {
         const settingsDoc = await getDoc(doc(db, "users", user.uid, "settings", "default"));
         if (settingsDoc.exists()) {
           setDailyLimit(settingsDoc.data().dailyLimit || 50);
+        }
+        
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setFirstName(userDoc.data().firstName || "");
         }
       } catch (err) {
         console.error("Error fetching settings:", err);
@@ -74,10 +83,22 @@ export function useDashboardData(): DashboardData {
       },
       (err) => setError(err)
     );
+    
+    // Fetch last 7 days of email history for the chart
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    const unsubscribeHistory = onSnapshot(
+      query(collection(db, "users", user.uid, "emailHistory"), where("sentAt", ">=", sevenDaysAgo)),
+      (snapshot) => {
+        const hist = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailHistory));
+        setRecentHistory(hist);
+      },
+      (err) => setError(err)
+    );
 
     return () => {
       unsubscribeCampaigns();
       unsubscribeLeads();
+      unsubscribeHistory();
     };
   }, [user]);
 
@@ -161,23 +182,23 @@ export function useDashboardData(): DashboardData {
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    // Real implementation would group historical `emailHistory` logs by date.
-    // For now, we return empty data if no campaigns, or a mocked zeroed set to show the empty chart.
-    // We can distribute the total sent/replies evenly over the last 7 days for the demo based on the active campaigns if we don't have historical logs.
-    // However, since we need REAL data, and we don't have historical daily logs in the schema yet, we will just return empty if total is 0.
+    d.setHours(0, 0, 0, 0); // Start of day
+    const nextD = new Date(d);
+    nextD.setDate(nextD.getDate() + 1); // Start of next day
+    
+    const dayHistory = recentHistory.filter(h => h.sentAt >= d.getTime() && h.sentAt < nextD.getTime());
+    
     performanceData.push({
       name: d.toLocaleDateString("en-US", { weekday: "short" }),
-      sent: 0,
-      replies: 0
+      sent: dayHistory.filter(h => h.status === "Sent").length,
+      replies: dayHistory.filter(h => h.status === "Replied").length // Depends on reply tracking later
     });
   }
-  
-  // NOTE: If we want to populate `performanceData` properly, we need to query the `emailHistory` collection (if it exists) by date.
-  // We'll leave it as zeroed out for now since the user wants real data. If no historical logs exist, it should be empty/zero.
 
   return {
     isLoading,
     error,
+    firstName,
     metrics: {
       emailsSentToday,
       dailyLimit,

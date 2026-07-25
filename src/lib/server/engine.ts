@@ -264,6 +264,20 @@ export async function processEngineTick(uid: string) {
         }
       }
     }
+
+    // Check if campaign is now completed
+    const remainingLeadsSnap = await adminDb
+      .collection(`users/${uid}/campaigns/${campDoc.id}/campaignLeads`)
+      .where("completed", "==", false)
+      .limit(1)
+      .get();
+
+    if (remainingLeadsSnap.empty) {
+      await campDoc.ref.update({
+        status: "Completed",
+        updatedAt: Date.now()
+      });
+    }
   }
 }
 

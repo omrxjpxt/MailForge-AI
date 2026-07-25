@@ -9,7 +9,14 @@ import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
-  const { isLoading, metrics, performanceData, latestChanges, recentCampaigns } = useDashboardData();
+  const { isLoading, metrics, performanceData, latestChanges, recentCampaigns, firstName } = useDashboardData();
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
 
   if (isLoading) {
     return (
@@ -22,7 +29,9 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold tracking-tight">Good Morning, Om</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {getGreeting()}{firstName ? `, ${firstName}` : ""}
+        </h1>
         <p className="text-muted-foreground">Here's what is happening with your outreach today.</p>
       </div>
       

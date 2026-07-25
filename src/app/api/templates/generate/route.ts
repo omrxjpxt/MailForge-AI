@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Type, Schema } from "@google/genai";
 import { adminAuth } from "@/lib/firebase/admin";
 import { generateWithFallback, AIError } from "@/lib/ai";
+import { checkRateLimit } from "@/lib/server/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,10 +12,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    let decodedClaims;
     try {
-      await adminAuth.verifySessionCookie(sessionCookie);
+      decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
     } catch {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    // Rate Limit: 10 requests per minute per user
+    if (!checkRateLimit(decodedClaims.sub, 10, 60 * 1000)) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
     }
 
     // 2. Parse Request Body

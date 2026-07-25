@@ -84,7 +84,6 @@ export function GlobalSearch() {
         
         unsubLeads = onSnapshot(leadsQ, (snap) => {
           const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead));
-          console.log(`[GlobalSearch] Loaded ${data.length} leads.`);
           setLeads(data);
           leadsLoaded = true;
           checkLoading();
@@ -96,7 +95,6 @@ export function GlobalSearch() {
         
         unsubCampaigns = onSnapshot(campaignsQ, (snap) => {
           const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Campaign));
-          console.log(`[GlobalSearch] Loaded ${data.length} campaigns.`);
           setCampaigns(data);
           campaignsLoaded = true;
           checkLoading();
@@ -108,7 +106,6 @@ export function GlobalSearch() {
         
         unsubTemplates = onSnapshot(templatesQ, (snap) => {
           const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
-          console.log(`[GlobalSearch] Loaded ${data.length} templates.`);
           setTemplates(data);
           templatesLoaded = true;
           checkLoading();
@@ -141,11 +138,6 @@ export function GlobalSearch() {
   const filteredResults = useMemo(() => {
     if (!debouncedQuery.trim()) return { leads: [], campaigns: [], templates: [], total: 0 };
     
-    console.log(`[GlobalSearch] --- Search Diagnostics ---`);
-    console.log(`[GlobalSearch] Query: "${debouncedQuery}"`);
-    console.log(`[GlobalSearch] Raw Leads available:`, leads.length);
-    console.log(`[GlobalSearch] Raw Campaigns available:`, campaigns.length);
-    console.log(`[GlobalSearch] Raw Templates available:`, templates.length);
 
     const term = debouncedQuery.toLowerCase();
     
@@ -154,25 +146,21 @@ export function GlobalSearch() {
         (l.lastName || "").toLowerCase().includes(term) ||
         (l.email || "").toLowerCase().includes(term) ||
         (l.company || "").toLowerCase().includes(term);
-      if (isMatch) console.log(`[GlobalSearch] Matched Lead:`, { id: l.id, email: l.email });
       return isMatch;
     }).slice(0, 5);
     
     const matchedCampaigns = campaigns.filter(c => {
       const isMatch = (c.name || "").toLowerCase().includes(term) ||
         (c.description || "").toLowerCase().includes(term);
-      if (isMatch) console.log(`[GlobalSearch] Matched Campaign:`, { id: c.id, name: c.name });
       return isMatch;
     }).slice(0, 5);
     
     const matchedTemplates = templates.filter(t => {
       const isMatch = (t.name || "").toLowerCase().includes(term) ||
         (t.subject || "").toLowerCase().includes(term);
-      if (isMatch) console.log(`[GlobalSearch] Matched Template:`, { id: t.id, name: t.name });
       return isMatch;
     }).slice(0, 5);
     
-    console.log(`[GlobalSearch] Total Matches - Leads: ${matchedLeads.length}, Campaigns: ${matchedCampaigns.length}, Templates: ${matchedTemplates.length}`);
 
     return {
       leads: matchedLeads,

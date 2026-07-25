@@ -1,8 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { generateAIEmailVariation } from "@/lib/server/ai-generator";
+import { adminAuth } from "@/lib/firebase/admin";
+import { checkRateLimit } from "@/lib/server/rate-limit";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const sessionCookie = req.cookies.get("session")?.value;
+    if (!sessionCookie) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let decodedClaims;
+    try {
+      decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    } catch {
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    // Rate Limit: 20 previews per minute per user
+    if (!checkRateLimit(decodedClaims.sub, 20, 60 * 1000)) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 });
+    }
+
     const { subject, body, lead, mode, campaignName } = await req.json();
 
     if (!subject || !body || !lead || !mode) {

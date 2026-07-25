@@ -4,10 +4,15 @@ import { processEngineTick } from "@/lib/server/engine";
 
 // Vercel Cron sends an Authorization header with Bearer CRON_SECRET
 // We also allow a custom dev secret for local testing
-const CRON_SECRET = process.env.CRON_SECRET || "dev-secret-123";
+const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(request: NextRequest) {
   try {
+    if (!CRON_SECRET) {
+      console.error("Missing CRON_SECRET environment variable");
+      return NextResponse.json({ error: "Server Configuration Error" }, { status: 500 });
+    }
+
     const authHeader = request.headers.get("authorization");
     
     // Support both Bearer token (Vercel Cron) and custom X-Cron-Secret (Dev manual trigger)
