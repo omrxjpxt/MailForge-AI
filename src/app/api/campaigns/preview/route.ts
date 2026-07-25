@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       let finalSubject = subject;
       let finalBody = body;
       
-      const replacePlaceholders = (text: string, data: any) => {
+      const replacePlaceholders = (text: string, data: Record<string, string>) => {
         return text.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
           return data[key.trim()] || match;
         });
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
     let finalSubject = result.subject;
     let finalBody = result.body;
 
-    const replacePlaceholders = (text: string, data: any) => {
+    const replacePlaceholders = (text: string, data: Record<string, string>) => {
       return text.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
         return data[key.trim()] || match; // fallback to original placeholder if missing
       });
@@ -75,8 +75,9 @@ export async function POST(req: NextRequest) {
       timeMs: result.timeMs
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Preview Generation Error:", error);
-    return NextResponse.json({ error: error.message || "Failed to generate preview" }, { status: 500 });
+    const err = error as Error;
+    return NextResponse.json({ error: err.message || "Failed to generate preview" }, { status: 500 });
   }
 }

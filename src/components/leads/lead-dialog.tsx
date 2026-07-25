@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Dialog,
@@ -36,7 +36,7 @@ export function LeadDialog({ isOpen, onOpenChange, leadToEdit }: LeadDialogProps
     handleSubmit,
     reset,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(leadSchema),
@@ -52,7 +52,7 @@ export function LeadDialog({ isOpen, onOpenChange, leadToEdit }: LeadDialogProps
     },
   });
 
-  const currentStatus = watch("status");
+  const currentStatus = useWatch({ control, name: "status" });
 
   useEffect(() => {
     if (isOpen) {

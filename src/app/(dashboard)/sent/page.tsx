@@ -4,9 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Mail, Loader2 } from "lucide-react";
+import { Search, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/client";
@@ -34,6 +33,7 @@ export default function SentPage() {
   useEffect(() => {
     if (authLoading || !user) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     const q = query(
       collection(db, "users", user.uid, "emailHistory"),

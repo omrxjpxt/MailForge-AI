@@ -32,7 +32,7 @@ export default function DashboardPage() {
         <h1 className="text-3xl font-bold tracking-tight">
           {getGreeting()}{firstName ? `, ${firstName}` : ""}
         </h1>
-        <p className="text-muted-foreground">Here's what is happening with your outreach today.</p>
+        <p className="text-muted-foreground">Here&apos;s what is happening with your outreach today.</p>
       </div>
       
       <div className="grid gap-6">

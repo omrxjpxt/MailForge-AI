@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase/client";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { Lead } from "@/types/lead";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2, Users, Eye } from "lucide-react";
+import { Search, Users, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +50,7 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
     });
 
     return () => unsubscribe();
-  }, [user, authLoading]);
+  }, [user, authLoading, onHasLeadsChange]);
 
   const filteredLeads = useMemo(() => {
     if (!searchQuery) return leads;

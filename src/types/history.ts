@@ -14,7 +14,7 @@ export const EmailHistorySchema = z.object({
   body: z.string(), // Snapshot of the rendered body
   
   sentAt: z.number(),
-  status: z.enum(["Sent", "Failed", "Bounced"]).default("Sent"),
+  status: z.enum(["Sent", "Failed", "Bounced", "Opened", "Replied", "Delivered", "Completed"]).default("Sent"),
   retryCount: z.number().default(0),
   error: z.string().optional().nullable()
 });

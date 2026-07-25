@@ -63,6 +63,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
 
   useEffect(() => {
     if (template) {
+      // eslint-disable-next-line
       setFormData({
         name: template.name,
         description: template.description || "",
@@ -126,6 +127,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
   // Progressive loading messages
   useEffect(() => {
     if (!isGenerating) return;
+    // eslint-disable-next-line
     setLoadingMsgIdx(0);
     const interval = setInterval(() => {
       setLoadingMsgIdx(prev => (prev + 1) % LOADING_MESSAGES.length);
@@ -242,7 +244,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
                     <Wand2 className="h-3 w-3 text-primary" />
                     <span className="text-xs font-semibold text-primary uppercase tracking-wider">Generated from Prompt</span>
                   </div>
-                  <p className="text-sm text-foreground/80 line-clamp-2">"{formData.createdWithPrompt}"</p>
+                  <p className="text-sm text-foreground/80 line-clamp-2">&quot;{formData.createdWithPrompt}&quot;</p>
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-2">

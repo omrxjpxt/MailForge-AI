@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { LeadFilters } from "@/components/leads/lead-filters";
 import { LeadsTable } from "@/components/leads/leads-table";
 import { LeadDialog } from "@/components/leads/lead-dialog";
@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/client";
 import { 
   collection, query, where, orderBy, onSnapshot, 
-  limit, startAfter, endBefore, QueryDocumentSnapshot, getCountFromServer
+  limit, startAfter, QueryDocumentSnapshot, getCountFromServer
 } from "firebase/firestore";
 import { Lead, LeadStatusEnum } from "@/types/lead";
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,7 @@ export default function LeadsPage() {
     };
     fetchTotal();
 
-  }, [user, statusFilter]);
+  }, [user, authLoading, statusFilter]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -115,7 +115,8 @@ export default function LeadsPage() {
       });
 
       return () => unsubscribe();
-  }, [user, statusFilter, pageIndex]); // Excluded pageCursors on purpose to prevent loops
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, statusFilter, pageIndex]); // Excluded pageCursors on purpose to prevent loops
 
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
@@ -198,7 +199,7 @@ export default function LeadsPage() {
       try {
         await deleteLead(user.uid, lead.id);
         toast.success("Lead deleted");
-      } catch (e) {
+      } catch {
         toast.error("Failed to delete lead");
       }
     }
@@ -209,7 +210,7 @@ export default function LeadsPage() {
     try {
       await archiveLead(user.uid, lead.id, !lead.isArchived);
       toast.success(`Lead ${lead.isArchived ? "unarchived" : "archived"}`);
-    } catch (e) {
+    } catch {
       toast.error("Failed to archive lead");
     }
   };
@@ -219,7 +220,7 @@ export default function LeadsPage() {
     try {
       await duplicateLead(user.uid, lead);
       toast.success("Lead duplicated");
-    } catch (e) {
+    } catch {
       toast.error("Failed to duplicate lead");
     }
   };

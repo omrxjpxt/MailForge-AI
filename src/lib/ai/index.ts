@@ -23,21 +23,22 @@ export class AIError extends Error {
 }
 
 export function handleAIError(error: unknown): string {
-  const err = error as any;
+  const err = error as Record<string, unknown>;
   const status = err?.status || err?.statusCode;
-  const messageStr = err?.message || "";
+  const messageStr = (err?.message as string) || "";
   
-  let parsedError: any = {};
+  let parsedError: Record<string, unknown> = {};
   try {
     if (messageStr.startsWith("{")) {
       parsedError = JSON.parse(messageStr).error || {};
     }
-  } catch (e) {
+  } catch {
     // Ignore parse errors
   }
 
   const geminiStatus = parsedError.status;
-  const geminiReason = parsedError.details?.[0]?.reason;
+  const details = parsedError.details as Array<Record<string, unknown>> | undefined;
+  const geminiReason = details?.[0]?.reason;
   
   // Log the complete response as requested by the user
   console.error("[Gemini SDK Error]");
@@ -61,7 +62,7 @@ export function handleAIError(error: unknown): string {
   
   // Return the actual backend error in development, or generic in production
   if (process.env.NODE_ENV === "development") {
-    return parsedError.message || messageStr || "Something went wrong.";
+    return (parsedError.message as string) || messageStr || "Something went wrong.";
   }
   
   return "Something went wrong.";

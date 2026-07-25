@@ -112,6 +112,7 @@ export default function NewCampaignPage() {
 
   const handleNext = () => {
     if (step === 1) {
+      // eslint-disable-next-line react-hooks/incompatible-library
       if (!watch("name")) return toast.error("Campaign name is required");
     }
     if (step === 2) {
@@ -142,8 +143,9 @@ export default function NewCampaignPage() {
       setValue("steps.0.body", data.template.body);
       
       toast.success("AI generated campaign sequence!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to generate");
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to generate");
     } finally {
       setIsGenerating(false);
     }
@@ -174,12 +176,13 @@ export default function NewCampaignPage() {
     toast.success(`Template applied to Step ${stepIndex + 1}`);
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: unknown) => {
+    const campaignData = data as CampaignInput;
     if (!user) return toast.error("You must be logged in");
-    if (!data.leadIds || data.leadIds.length === 0) return toast.error("Select at least one lead");
+    if (!campaignData.leadIds || campaignData.leadIds.length === 0) return toast.error("Select at least one lead");
     
     // Validate steps
-    for (const [index, stepData] of (data.steps || []).entries()) {
+    for (const [index, stepData] of (campaignData.steps || []).entries()) {
       if (!stepData.subject || !stepData.body) {
         return toast.error(`Email step ${index + 1} is missing subject or body`);
       }
@@ -188,15 +191,16 @@ export default function NewCampaignPage() {
     setIsSaving(true);
     try {
       // Schedule immediately vs draft logic can be added here
-      data.totalLeads = data.leadIds ? data.leadIds.length : 0;
-      data.status = "Scheduled"; // Launching sets to scheduled/running
+      campaignData.totalLeads = campaignData.leadIds ? campaignData.leadIds.length : 0;
+      campaignData.status = "Scheduled"; // Launching sets to scheduled/running
       
-      await createCampaign(user.uid, data);
+      await createCampaign(user.uid, campaignData);
       
       toast.success("Campaign launched successfully!");
       router.push("/campaigns");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create campaign");
+    } catch (error: unknown) {
+      const err = error as Error;
+      toast.error(err.message || "Failed to create campaign");
     } finally {
       setIsSaving(false);
     }
@@ -214,7 +218,7 @@ export default function NewCampaignPage() {
       await createCampaign(user.uid, data as CampaignInput);
       toast.success("Draft saved");
       router.push("/campaigns");
-    } catch (error: any) {
+    } catch {
       toast.error("Failed to save draft");
     } finally {
       setIsSaving(false);
@@ -255,8 +259,9 @@ export default function NewCampaignPage() {
 
       setPreviewSubject(json.subject);
       setPreviewBody(json.body);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to generate preview");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || "Failed to generate preview");
       setPreviewLead(null);
     } finally {
       setIsPreviewLoading(false);

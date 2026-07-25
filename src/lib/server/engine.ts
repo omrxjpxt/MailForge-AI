@@ -251,11 +251,12 @@ export async function processEngineTick(uid: string) {
           });
 
           await batch.commit();
-        } catch (error: any) {
-           console.error(`Email sending failed for lead ${progress.leadId}:`, error);
+        } catch (error: unknown) {
+           const err = error as Error;
+           console.error(`Email sending failed for lead ${progress.leadId}:`, err);
            await leadProgressDoc.ref.update({
              status: "Failed",
-             error: error.message || "Email failed"
+             error: err.message || "Email failed"
            });
            
            await campDoc.ref.update({

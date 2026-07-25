@@ -123,7 +123,7 @@ Rules:
     // 4. Generate content using Gemini with retry logic
     let attempt = 0;
     const maxAttempts = 2;
-    let generatedTemplate: any = null;
+    let generatedTemplate: Record<string, unknown> | null = null;
     let lastValidationError = "Failed to generate valid template";
 
     while (attempt < maxAttempts) {
@@ -165,8 +165,9 @@ Rules:
         // If we reach here, it's valid
         generatedTemplate = parsed;
         break; // exit loop
-      } catch (error: any) {
-        lastValidationError = error.message;
+      } catch (error: unknown) {
+        const err = error as Error;
+        lastValidationError = err.message;
         console.warn(`Attempt ${attempt} failed: ${lastValidationError}`);
         if (attempt >= maxAttempts) {
           throw new Error(lastValidationError); // Throw to outer catch block

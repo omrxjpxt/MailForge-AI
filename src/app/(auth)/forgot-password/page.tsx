@@ -121,7 +121,7 @@ export default function ForgotPasswordPage() {
               <div className="text-sm text-center text-muted-foreground">
                 Remember your password?{" "}
                 <Link href="/login" className="text-primary hover:underline font-medium">
-                  Sign in
+                Back to Sign in
                 </Link>
               </div>
             </CardFooter>
@@ -132,7 +132,7 @@ export default function ForgotPasswordPage() {
               <CheckCircle2 className="h-4 w-4" />
               <AlertTitle>Email sent</AlertTitle>
               <AlertDescription>
-                We've sent a password reset link to <strong>{email}</strong>. Check your inbox and follow the instructions.
+                We&apos;ve sent a password reset link to <strong>{email}</strong>. Check your inbox and follow the instructions.
               </AlertDescription>
             </Alert>
             <Button variant="outline" className="w-full" asChild>

@@ -24,6 +24,7 @@ export default function CampaignsPage() {
   useEffect(() => {
     if (authLoading || !user) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     const q = query(
       collection(db, "users", user.uid, "campaigns"),
@@ -41,15 +42,16 @@ export default function CampaignsPage() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, authLoading]);
 
   const handleLaunch = async (id: string) => {
     if (!user) return;
     try {
       await launchCampaign(user.uid, id);
       toast.success("Campaign launched");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to launch campaign");
+    } catch (e: unknown) {
+      const error = e as Error;
+      toast.error(error.message || "Failed to launch campaign");
     }
   };
 
@@ -58,8 +60,9 @@ export default function CampaignsPage() {
     try {
       await pauseCampaign(user.uid, id);
       toast.success("Campaign paused");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to pause campaign");
+    } catch (e: unknown) {
+      const error = e as Error;
+      toast.error(error.message || "Failed to pause campaign");
     }
   };
 
@@ -68,8 +71,9 @@ export default function CampaignsPage() {
     try {
       await duplicateCampaign(user.uid, campaign);
       toast.success("Campaign duplicated to Draft");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to duplicate campaign");
+    } catch (e: unknown) {
+      const error = e as Error;
+      toast.error(error.message || "Failed to duplicate campaign");
     }
   };
 
@@ -78,8 +82,9 @@ export default function CampaignsPage() {
     try {
       await archiveCampaign(user.uid, id);
       toast.success("Campaign archived");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to archive campaign");
+    } catch (e: unknown) {
+      const error = e as Error;
+      toast.error(error.message || "Failed to archive campaign");
     }
   };
 
@@ -88,8 +93,9 @@ export default function CampaignsPage() {
     try {
       await updateCampaign(user.uid, id, { status: "Draft" });
       toast.success("Campaign restored to Drafts");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to unarchive campaign");
+    } catch (e: unknown) {
+      const error = e as Error;
+      toast.error(error.message || "Failed to unarchive campaign");
     }
   };
 
@@ -99,8 +105,9 @@ export default function CampaignsPage() {
       try {
         await deleteCampaign(user.uid, id);
         toast.success("Campaign deleted");
-      } catch (e: any) {
-        toast.error(e.message || "Failed to delete campaign");
+      } catch (e: unknown) {
+        const error = e as Error;
+        toast.error(error.message || "Failed to delete campaign");
       }
     }
   };
@@ -120,7 +127,7 @@ export default function CampaignsPage() {
       } else {
         toast.error(`Engine failed: ${data.error}`);
       }
-    } catch (e: any) {
+    } catch {
       toast.error("Failed to connect to engine");
     } finally {
       setIsEngineRunning(false);

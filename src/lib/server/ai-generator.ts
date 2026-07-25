@@ -18,7 +18,7 @@ export async function generateAIEmailVariation(
       acc[key] = value;
     }
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, unknown>);
 
   let instructions = "";
   
@@ -109,7 +109,7 @@ ${originalBody}
       tokensUsed,
       timeMs
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`AI Lead Personalization Failed (Mode: ${mode}):`, error);
     throw error;
   }

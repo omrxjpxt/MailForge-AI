@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import Link from "next/link";
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { ActivitySquare } from "lucide-react";
