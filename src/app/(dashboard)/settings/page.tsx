@@ -48,34 +48,52 @@ function SettingsContent() {
   };
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    let unsubscribeDoc: (() => void) | undefined;
+
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       if (user) {
-        const unsubscribeDoc = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setGmailConnected(!!data.gmailConnected);
-            setUserProfile({
-              firstName: data.firstName || "",
-              lastName: data.lastName || "",
-              email: user.email || ""
-            });
-          } else {
-            setGmailConnected(false);
-            setUserProfile({
-              firstName: "",
-              lastName: "",
-              email: user.email || ""
-            });
+        unsubscribeDoc = onSnapshot(
+          doc(db, "users", user.uid),
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              setGmailConnected(!!data.gmailConnected);
+              setUserProfile({
+                firstName: data.firstName || "",
+                lastName: data.lastName || "",
+                email: user.email || ""
+              });
+            } else {
+              setGmailConnected(false);
+              setUserProfile({
+                firstName: "",
+                lastName: "",
+                email: user.email || ""
+              });
+            }
+            setProfileLoading(false);
+          },
+          (error) => {
+            console.error("Firestore error on profile listener:", error);
+            setProfileLoading(false);
           }
-          setProfileLoading(false);
-        });
-        return () => unsubscribeDoc();
+        );
       } else {
         setGmailConnected(false);
         setProfileLoading(false);
+        if (unsubscribeDoc) {
+          unsubscribeDoc();
+          unsubscribeDoc = undefined;
+        }
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeDoc) {
+        unsubscribeDoc();
+      }
+    };
   }, []);
 
   useEffect(() => {
