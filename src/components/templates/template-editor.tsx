@@ -111,9 +111,11 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
       
       setFormData(prev => ({
         ...prev,
+        name: data.template.templateName || prev.name,
+        description: data.template.description || prev.description,
         subject: data.template.subject,
         body: data.template.body,
-        category: data.template.category,
+        category: "Cold Outreach", // Default to something since category was removed from AI schema
         tags: data.template.tags,
         isAI: true,
         createdWithPrompt: aiPrompt

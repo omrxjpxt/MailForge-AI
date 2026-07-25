@@ -18,45 +18,75 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Parse Request Body
-    const { prompt, tone = "professional", context = "" } = await request.json();
+    const { prompt } = await request.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
     // 3. Construct the prompt
-    const systemInstruction = `You are an expert B2B cold email copywriter. 
-Your goal is to write a highly converting, concise, and personalized cold email template.
-Tone: ${tone}
-Context: ${context}
+    const systemInstruction = `You are an elite SDR and B2B cold email copywriter.
+
+Your job is to generate production-ready email templates that can be saved and used immediately.
+
+Return ONLY valid JSON.
+
+Schema:
+
+{
+  "templateName": string,
+  "description": string,
+  "tags": string[],
+  "subject": string,
+  "body": string
+}
 
 Rules:
-- Keep the body under 150 words.
-- Focus on the prospect's problem, not just features.
-- Include a clear, low-friction call to action.
-- Use placeholders like {{firstName}} or {{companyName}} for personalization.
-- Provide a catchy, non-clickbaity subject line.
-- Categorize the template into one of the following: Cold Outreach, Follow-up, Value-Add, Breakup, or Other.
-- Provide 2-4 relevant tags.`;
+
+- Return plain text only.
+- Never return HTML.
+- Never use <br>, <p>, <div>, or Markdown.
+- Use \\n\\n for paragraph spacing.
+- Automatically generate:
+  - Template Name
+  - Description
+  - Tags
+  - Subject
+  - Email Body
+- The email body must already be perfectly formatted.
+- Use these placeholders whenever appropriate:
+
+{{firstName}}
+{{lastName}}
+{{company}}
+{{jobTitle}}
+{{industry}}
+{{email}}
+
+- Never ask the user to manually replace company names.
+- Never invent unsupported placeholders.
+- Keep the email concise, conversational, and high-converting.
+- Include one clear CTA.
+- Return JSON only. No explanations or code fences.`;
 
     const responseSchema: Schema = {
       type: Type.OBJECT,
       properties: {
+        templateName: {
+          type: Type.STRING,
+          description: "The name of the template.",
+        },
+        description: {
+          type: Type.STRING,
+          description: "The description of the template.",
+        },
         subject: {
           type: Type.STRING,
           description: "The subject line of the email.",
         },
         body: {
           type: Type.STRING,
-          description: "The body of the email. Can include basic HTML like <br> for line breaks.",
-        },
-        tone: {
-          type: Type.STRING,
-          description: "The tone used for the email.",
-        },
-        category: {
-          type: Type.STRING,
-          description: "The category of the email template.",
+          description: "The body of the email.",
         },
         tags: {
           type: Type.ARRAY,
@@ -66,7 +96,7 @@ Rules:
           description: "2-4 tags describing the email.",
         },
       },
-      required: ["subject", "body", "tone", "category", "tags"],
+      required: ["templateName", "description", "subject", "body", "tags"],
     };
 
     // 4. Generate content using Gemini
