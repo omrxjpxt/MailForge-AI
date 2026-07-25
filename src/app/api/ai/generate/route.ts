@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await adminAuth.verifySessionCookie(sessionCookie);
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       firstName = email ? email.split("@")[0] : "";
     }
 
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (!userSnap.exists) {
       updates.firstName = firstName;
       updates.lastName = lastName;

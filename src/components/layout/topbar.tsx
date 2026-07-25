@@ -1,8 +1,7 @@
 "use client";
 
-import { Search, Bell, Menu } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +15,7 @@ import { auth } from "@/lib/firebase/client";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { GlobalSearch } from "./global-search";
 
 export function Topbar() {
   const router = useRouter();
@@ -39,14 +39,7 @@ export function Topbar() {
         <Button variant="ghost" size="icon" className="md:hidden">
           <Menu className="h-5 w-5" />
         </Button>
-        <div className="relative w-full max-w-md hidden md:flex items-center">
-          <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search campaigns, leads..."
-            className="w-full bg-muted/50 pl-9 border-none focus-visible:ring-1"
-          />
-        </div>
+        <GlobalSearch />
       </div>
 
       <div className="flex items-center gap-4">

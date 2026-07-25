@@ -39,6 +39,7 @@ export function useDashboardData(): DashboardData {
 
   useEffect(() => {
     if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
       return;
     }
@@ -83,6 +84,7 @@ export function useDashboardData(): DashboardData {
   useEffect(() => {
     if (user && campaigns && leads) {
       // Data is mostly loaded when we have the snapshot, even if empty.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     }
   }, [user, campaigns, leads]);
@@ -126,7 +128,7 @@ export function useDashboardData(): DashboardData {
     .slice(0, 5);
 
   // Latest Changes
-  const latestChangesRaw: any[] = [];
+  const latestChangesRaw: unknown[] = [];
   
   campaigns.forEach(camp => {
     latestChangesRaw.push({

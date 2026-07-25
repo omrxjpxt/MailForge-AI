@@ -62,13 +62,17 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(new URL("/settings?tab=integrations&success=gmail_connected", request.url));
     response.cookies.delete("oauth_state");
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in Gmail callback:", error);
     
     // Check for specific token errors
     let errorCode = "oauth_failed";
-    if (error.response?.data?.error) {
-       errorCode = error.response.data.error;
+    if (error && typeof error === "object" && "response" in error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const resp = (error as any).response;
+      if (resp?.data?.error) {
+        errorCode = resp.data.error;
+      }
     }
     
     const response = NextResponse.redirect(new URL(`/settings?tab=integrations&gmail_error=${errorCode}`, request.url));

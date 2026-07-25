@@ -52,7 +52,7 @@ export default function LeadsPage() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    // Reset pagination when status filter changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPageIndex(0);
     setPageCursors([]);
     
@@ -75,10 +75,11 @@ export default function LeadsPage() {
   useEffect(() => {
     if (authLoading || !user) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoadingLeads(true);
 
     const baseQ = collection(db, "users", user.uid, "leads");
-      const constraints: any[] = [];
+    const constraints: import("firebase/firestore").QueryConstraint[] = [];
 
       if (statusFilter !== "all") {
         constraints.push(where("status", "==", statusFilter));
