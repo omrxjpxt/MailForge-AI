@@ -7,6 +7,7 @@ export const ai = new GoogleGenAI({
 let cachedWorkingModel: string | null = null;
 
 const PREFERRED_MODELS = [
+  "gemini-3.5-flash",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-1.5-flash",
@@ -22,17 +23,45 @@ export class AIError extends Error {
 }
 
 export function handleAIError(error: unknown): string {
-  const err = error as Record<string, unknown>;
+  const err = error as any;
   const status = err?.status || err?.statusCode;
+  const messageStr = err?.message || "";
   
-  if (status === 404) {
-    return "AI model unavailable. Please try again.";
+  let parsedError: any = {};
+  try {
+    if (messageStr.startsWith("{")) {
+      parsedError = JSON.parse(messageStr).error || {};
+    }
+  } catch (e) {
+    // Ignore parse errors
   }
-  if (status === 429) {
-    return "AI generation is temporarily unavailable because API quota has been reached.";
+
+  const geminiStatus = parsedError.status;
+  const geminiReason = parsedError.details?.[0]?.reason;
+  
+  // Log the complete response as requested by the user
+  console.error("[Gemini SDK Error]");
+  console.error("HTTP Status:", status);
+  console.error("Gemini Status:", geminiStatus);
+  console.error("Gemini Reason:", geminiReason);
+  console.error("Full Message:", messageStr);
+  
+  if (geminiStatus === "RESOURCE_EXHAUSTED" || status === 429) {
+    return "Quota exceeded";
   }
-  if (status === 401) {
-    return "Server configuration error.";
+  if (geminiReason === "API_KEY_INVALID" || status === 401) {
+    return "Invalid API key";
+  }
+  if (geminiStatus === "PERMISSION_DENIED" || status === 403) {
+    return "Permission denied";
+  }
+  if (geminiStatus === "NOT_FOUND" || status === 404) {
+    return "Unsupported model";
+  }
+  
+  // Return the actual backend error in development, or generic in production
+  if (process.env.NODE_ENV === "development") {
+    return parsedError.message || messageStr || "Something went wrong.";
   }
   
   return "Something went wrong.";
