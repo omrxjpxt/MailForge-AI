@@ -99,19 +99,76 @@ Rules:
       required: ["templateName", "description", "subject", "body", "tags"],
     };
 
-    // 4. Generate content using Gemini
-    const response = await generateWithFallback(prompt, {
-      systemInstruction,
-      temperature: 0.7,
-      responseMimeType: "application/json",
-      responseSchema,
-    });
+    const supportedPlaceholders = new Set(["firstName", "lastName", "company", "jobTitle", "industry", "email"]);
 
-    if (!response.text) {
-      throw new Error("No response text received from Gemini");
+    // Helper to extract and validate placeholders
+    const extractPlaceholders = (text: string) => {
+      const matches = text.match(/\{\{([^}]+)\}\}/g) || [];
+      return new Set(matches.map(m => m.replace(/[{}]/g, "")));
+    };
+
+    // Helper to check for HTML
+    const hasHTML = (text: string) => {
+      return /<[a-z][\s\S]*>/i.test(text);
+    };
+
+    // 4. Generate content using Gemini with retry logic
+    let attempt = 0;
+    const maxAttempts = 2;
+    let generatedTemplate: any = null;
+    let lastValidationError = "Failed to generate valid template";
+
+    while (attempt < maxAttempts) {
+      attempt++;
+      try {
+        const response = await generateWithFallback(prompt, {
+          systemInstruction,
+          temperature: 0.7,
+          responseMimeType: "application/json",
+          responseSchema,
+        });
+
+        if (!response.text) {
+          throw new Error("No response text received from Gemini");
+        }
+        
+        // Clean markdown backticks if present
+        const text = response.text.replace(/^```json\n|\n```$/g, "").trim();
+        const parsed = JSON.parse(text);
+
+        // Required fields
+        if (!parsed.templateName || !parsed.description || !parsed.subject || !parsed.body || !parsed.tags) {
+          throw new Error("Missing required fields in response");
+        }
+
+        // HTML check
+        if (hasHTML(parsed.body) || hasHTML(parsed.subject)) {
+          throw new Error("Response contains HTML tags");
+        }
+
+        // Placeholder check
+        const usedPlaceholders = extractPlaceholders(parsed.subject + " " + parsed.body);
+        for (const p of usedPlaceholders) {
+          if (!supportedPlaceholders.has(p)) {
+            throw new Error(`Response contains unsupported placeholder: {{${p}}}`);
+          }
+        }
+
+        // If we reach here, it's valid
+        generatedTemplate = parsed;
+        break; // exit loop
+      } catch (error: any) {
+        lastValidationError = error.message;
+        console.warn(`Attempt ${attempt} failed: ${lastValidationError}`);
+        if (attempt >= maxAttempts) {
+          throw new Error(lastValidationError); // Throw to outer catch block
+        }
+      }
     }
 
-    const generatedTemplate = JSON.parse(response.text);
+    if (!generatedTemplate) {
+      throw new Error(lastValidationError);
+    }
 
     return NextResponse.json({ 
       template: generatedTemplate,
