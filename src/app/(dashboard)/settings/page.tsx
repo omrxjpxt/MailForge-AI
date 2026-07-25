@@ -31,7 +31,21 @@ function SettingsContent() {
 
   const gmailError = searchParams.get("gmail_error");
   const successMsg = searchParams.get("success");
-  const defaultTab = searchParams.get("tab") || "account";
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "account");
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams, activeTab]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("tab", value);
+    router.push(`/settings?${newParams.toString()}`);
+  };
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -134,7 +148,7 @@ function SettingsContent() {
         <p className="text-muted-foreground">Manage your account, integrations, and preferences.</p>
       </div>
 
-      <Tabs defaultValue={defaultTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="mb-4 bg-muted/50 w-full sm:w-auto grid grid-cols-2 sm:flex">
           <TabsTrigger value="account" className="rounded-sm gap-2"><User className="h-4 w-4" /> Account</TabsTrigger>
           <TabsTrigger value="integrations" className="rounded-sm gap-2"><Mail className="h-4 w-4" /> Integrations</TabsTrigger>
