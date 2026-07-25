@@ -47,7 +47,7 @@ export async function DELETE(request: NextRequest) {
     try {
       const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
       await adminAuth.revokeRefreshTokens(decodedClaims.sub);
-    } catch (e) {
+    } catch {
       // Ignore if session is already invalid
     }
 

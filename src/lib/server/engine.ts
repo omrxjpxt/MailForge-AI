@@ -136,7 +136,7 @@ export async function processEngineTick(uid: string) {
           processingNode: "engine-v1"
         });
       });
-    } catch (e: unknown) {
+    } catch {
       continue; // Failed to lock, skip
     }
 

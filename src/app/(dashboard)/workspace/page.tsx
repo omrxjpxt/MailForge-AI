@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles, Send, RefreshCw, X, ChevronRight, Zap } from "lucide-react";
+import { Sparkles, Send, RefreshCw, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 const leads = [
@@ -47,8 +47,8 @@ export default function WorkspacePage() {
       } else {
         throw new Error(data.error);
       }
-    } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
-      toast.error(error.message || "Failed to generate");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to generate");
     } finally {
       setIsGenerating(false);
     }

@@ -69,16 +69,7 @@ export default function NewCampaignPage() {
     const fetchTemplates = async () => {
       setIsTemplatesLoading(true);
       try {
-        console.log({
-          uid: user?.uid,
-          authLoading,
-          email: user?.email
-        });
-        
-        console.log("Executing Query:", {
-          collection: `users/${user.uid}/templates`,
-          orderBy: "createdAt desc"
-        });
+
 
         const q = query(
           collection(db, "users", user.uid, "templates"),

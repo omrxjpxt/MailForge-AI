@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Type, Schema } from "@google/genai";
 import { adminAuth } from "@/lib/firebase/admin";
-import { generateWithFallback } from "@/lib/ai/model";
+import { generateWithFallback, AIError } from "@/lib/ai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     try {
       await adminAuth.verifySessionCookie(sessionCookie);
-    } catch (error) {
+    } catch {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 
@@ -88,10 +88,15 @@ Rules:
       success: true
     });
 
-  } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
+  } catch (error: unknown) {
+    if (error instanceof AIError) {
+      console.error(`AIError (${error.status}):`, error.message);
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     console.error("Error generating template:", error);
     return NextResponse.json({ 
-      error: error.message || "Failed to generate template" 
+      error: error instanceof Error ? error.message : "Failed to generate template" 
     }, { status: 500 });
   }
 }

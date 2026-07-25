@@ -47,12 +47,18 @@ export const deleteCampaign = async (userId: string, campaignId: string): Promis
 };
 
 export const duplicateCampaign = async (userId: string, campaign: Campaign): Promise<string> => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, userId: _, createdAt, updatedAt, startedAt, completedAt, nextExecutionAt, emailsSent, emailsDelivered, replies, opens, bounces, failures, progress, isProcessing, processingLock, currentStep, currentLeadIndex, status, ...data } = campaign;
+  const { name, description, leadIds, templateId, steps, dailyLimit, delayBetweenEmails, timezone, totalLeads } = campaign;
   
   const duplicatedData: CampaignInput = {
-    ...data,
-    name: `${data.name} (Copy)`,
+    name: `${name} (Copy)`,
+    description,
+    leadIds,
+    templateId,
+    steps,
+    dailyLimit,
+    delayBetweenEmails,
+    timezone,
+    totalLeads,
     status: "Draft",
     
     // Reset metrics and execution state
@@ -70,6 +76,8 @@ export const duplicateCampaign = async (userId: string, campaign: Campaign): Pro
     nextExecutionAt: null,
     startedAt: null,
     completedAt: null,
+    dailyEmailsSent: 0,
+    dailyEmailsSentDate: null,
   };
 
   return await createCampaign(userId, duplicatedData);

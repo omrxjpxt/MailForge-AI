@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
     try {
       await adminAuth.verifySessionCookie(sessionCookie);
-    } catch (error) {
+    } catch {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 

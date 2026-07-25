@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Key, Shield, User, Bell } from "lucide-react";
+import { Mail, Shield, User, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 
@@ -22,10 +22,7 @@ export default function SettingsPage() {
     }, 1000);
   };
 
-  const handleConnectGmail = () => {
-    console.log("Connect Gmail button clicked");
-    window.location.href = "/api/gmail/auth";
-  };
+
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-5xl">

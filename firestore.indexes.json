@@ -41,6 +41,16 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "stepId", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "emailHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "campaignId", "order": "ASCENDING" },
+        { "fieldPath": "leadId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "stepId", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

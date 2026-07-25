@@ -39,8 +39,11 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
   const [currentTag, setCurrentTag] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    // eslint-disable-next-line
+  const [prevTemplateId, setPrevTemplateId] = useState<string | undefined>(undefined);
+  
+  // Sync prop to state without useEffect (derived state pattern)
+  if (template?.id !== prevTemplateId) {
+    setPrevTemplateId(template?.id);
     if (template) {
       setFormData({
         name: template.name,
@@ -63,7 +66,7 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
         isAI: false,
       });
     }
-  }, [template, isOpen]);
+  }
 
   useEffect(() => {
     if (textareaRef.current) {

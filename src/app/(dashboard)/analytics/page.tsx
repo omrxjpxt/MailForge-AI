@@ -81,7 +81,15 @@ export default function AnalyticsPage() {
   );
 }
 
-function MetricCard({ title, value, trend, trendDirection, subtitle }: any) {
+interface MetricCardProps {
+  title: string;
+  value: string;
+  trend: string;
+  trendDirection: "up" | "down" | "flat";
+  subtitle: string;
+}
+
+function MetricCard({ title, value, trend, trendDirection, subtitle }: MetricCardProps) {
   return (
     <Card className="bg-card">
       <CardContent className="p-6">
@@ -104,7 +112,14 @@ function MetricCard({ title, value, trend, trendDirection, subtitle }: any) {
   );
 }
 
-function FunnelStep({ label, count, percentage, color }: any) {
+interface FunnelStepProps {
+  label: string;
+  count: number;
+  percentage: number;
+  color: string;
+}
+
+function FunnelStep({ label, count, percentage, color }: FunnelStepProps) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex justify-between items-end text-sm">

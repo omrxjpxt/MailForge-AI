@@ -91,7 +91,7 @@ export default function TemplatesPage() {
     try {
       await duplicateTemplate(user.uid, template);
       toast.success("Template duplicated");
-    } catch (error) {
+    } catch {
       toast.error("Failed to duplicate template");
     }
   };
@@ -101,7 +101,7 @@ export default function TemplatesPage() {
     try {
       await archiveTemplate(user.uid, templateId);
       toast.success("Template archived");
-    } catch (error) {
+    } catch {
       toast.error("Failed to archive template");
     }
   };
@@ -112,7 +112,7 @@ export default function TemplatesPage() {
     try {
       await deleteTemplate(user.uid, templateId);
       toast.success("Template deleted");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete template");
     }
   };

@@ -48,12 +48,18 @@ export const deleteTemplate = async (userId: string, templateId: string): Promis
 };
 
 export const duplicateTemplate = async (userId: string, template: EmailTemplate): Promise<string> => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, userId: _, usageCount, replyCount, openCount, campaignCount, lastUsed, createdAt, updatedAt, version, ...data } = template;
+  const { name, description, subject, body, category, tags, isArchived, favorite, isAI } = template;
   
   const duplicatedData: TemplateInput = {
-    ...data,
-    name: `${data.name} (Copy)`,
+    name: `${name} (Copy)`,
+    description,
+    subject,
+    body,
+    category,
+    tags,
+    isArchived,
+    favorite,
+    isAI,
   };
 
   return await createTemplate(userId, duplicatedData);

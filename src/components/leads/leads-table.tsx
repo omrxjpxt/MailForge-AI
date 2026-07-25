@@ -6,14 +6,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { 
   MoreHorizontal, 
-  ChevronLeft, 
-  ChevronRight,
   Pencil,
   Copy,
   Archive,
   Trash2,
-  CheckSquare,
-  Square
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import {

@@ -42,12 +42,11 @@ export const deleteLead = async (userId: string, leadId: string): Promise<void> 
 };
 
 export const duplicateLead = async (userId: string, lead: Lead): Promise<string> => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { id, userId: _, createdAt, updatedAt, lastContactedAt, lastRepliedAt, ...data } = lead;
+  const { firstName, lastName, email, phone, company, jobTitle, website, linkedin, location, industry, companySize, status, tags, isArchived, source, notes, campaignId, emailVerified, createdByAI } = lead;
   
   const duplicatedData: LeadInput = {
-    ...data,
-    firstName: `${data.firstName} (Copy)`,
+    firstName: `${firstName} (Copy)`,
+    lastName, email, phone, company, jobTitle, website, linkedin, location, industry, companySize, status, tags, isArchived, source, notes, campaignId, emailVerified, createdByAI
   };
 
   return await addLead(userId, duplicatedData);

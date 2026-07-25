@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     let decodedClaims;
     try {
       decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
-    } catch (error) {
+    } catch {
       return NextResponse.json({ error: "Invalid session" }, { status: 401 });
     }
 

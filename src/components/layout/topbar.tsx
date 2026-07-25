@@ -15,7 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { auth } from "@/lib/firebase/client";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 export function Topbar() {
   const router = useRouter();
@@ -81,7 +80,7 @@ export function Topbar() {
               Billing
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive w-full cursor-pointer" onClick={(e) => handleLogout()}>
+            <DropdownMenuItem className="text-destructive w-full cursor-pointer" onClick={() => handleLogout()}>
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

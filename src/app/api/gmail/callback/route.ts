@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     let decodedClaims;
     try {
       decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
-    } catch (error) {
+    } catch {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 

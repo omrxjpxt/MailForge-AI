@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebase/admin";
-import { generateWithFallback } from "@/lib/ai/model";
+import { generateWithFallback, AIError } from "@/lib/ai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,10 +47,15 @@ Rules:
       success: true
     });
 
-  } catch (error: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
+  } catch (error: unknown) {
+    if (error instanceof AIError) {
+      console.error(`AIError (${error.status}):`, error.message);
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    
     console.error("Error generating AI content:", error);
     return NextResponse.json({ 
-      error: error.message || "Failed to generate content" 
+      error: error instanceof Error ? error.message : "Failed to generate content" 
     }, { status: 500 });
   }
 }
