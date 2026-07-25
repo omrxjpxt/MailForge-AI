@@ -15,10 +15,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/firebase/auth";
 import { createCampaign } from "@/lib/firebase/campaigns";
 import { CampaignInputSchema, CampaignInput } from "@/types/campaign";
 import { LeadSelector } from "@/components/campaigns/lead-selector";
+import { Lead } from "@/types/lead";
 import { EmailTemplate } from "@/types/template";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
@@ -30,6 +32,12 @@ export default function NewCampaignPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasLeads, setHasLeads] = useState(false);
+  
+  // Preview Modal State
+  const [previewLead, setPreviewLead] = useState<Lead | null>(null);
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [previewBody, setPreviewBody] = useState("");
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
@@ -48,18 +56,18 @@ export default function NewCampaignPage() {
       name: "",
       description: "",
       status: "Draft",
+      aiPersonalization: {
+        enabled: false,
+        mode: "Basic",
+        fallbackBehavior: "Original"
+      },
       leadIds: [],
       steps: [
         { stepId: crypto.randomUUID(), subject: "", body: "", waitDays: 0, status: "Pending" }
       ],
       dailyLimit: 50,
       delayBetweenEmails: 0,
-      timezone: "UTC",
-      aiPersonalization: {
-        enabled: false,
-        strength: "Low",
-        fallbackBehavior: "Original"
-      }
+      timezone: "UTC"
     }
   });
 
@@ -213,6 +221,48 @@ export default function NewCampaignPage() {
     }
   };
 
+  const handlePreviewLead = async (lead: Lead) => {
+    const data = watch();
+    const mode = data.aiPersonalization?.enabled ? data.aiPersonalization.mode : "Basic";
+    
+    // Pick the first step for preview, or let user select step. Default to step 1.
+    const step1 = data.steps && data.steps.length > 0 ? data.steps[0] : null;
+    if (!step1?.subject || !step1?.body) {
+      toast.error("Please add a subject and body in Step 3 before previewing.");
+      return;
+    }
+
+    setPreviewLead(lead);
+    setIsPreviewLoading(true);
+    setPreviewSubject("");
+    setPreviewBody("");
+
+    try {
+      const res = await fetch("/api/campaigns/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: step1.subject,
+          body: step1.body,
+          lead,
+          mode,
+          campaignName: data.name
+        })
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Preview failed");
+
+      setPreviewSubject(json.subject);
+      setPreviewBody(json.body);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate preview");
+      setPreviewLead(null);
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-4">
@@ -326,19 +376,19 @@ export default function NewCampaignPage() {
               {watch("aiPersonalization.enabled") && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 pl-1">
                   <div className="space-y-2">
-                    <Label>Variation Strength</Label>
+                    <Label>Personalization Mode</Label>
                     <Controller
                       control={control}
-                      name="aiPersonalization.strength"
+                      name="aiPersonalization.mode"
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || "Basic"}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select strength" />
+                            <SelectValue placeholder="Select mode" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Low">Low (95% identical, minor tweaks)</SelectItem>
-                            <SelectItem value="Medium">Medium (Sentence restructuring)</SelectItem>
-                            <SelectItem value="High">High (Completely rewritten flow)</SelectItem>
+                            <SelectItem value="Basic">Basic (Placeholders only)</SelectItem>
+                            <SelectItem value="Smart">Smart (AI rewrites intro only)</SelectItem>
+                            <SelectItem value="Deep">Deep (AI rewrites full email)</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
@@ -397,6 +447,7 @@ export default function NewCampaignPage() {
                     selectedLeadIds={field.value || []} 
                     onChange={field.onChange} 
                     onHasLeadsChange={setHasLeads}
+                    onPreviewLead={handlePreviewLead}
                   />
                 )}
               />
@@ -557,6 +608,41 @@ export default function NewCampaignPage() {
           </CardFooter>
         </Card>
       )}
+
+      {/* Preview Modal */}
+      <Dialog open={!!previewLead} onOpenChange={(open) => !open && setPreviewLead(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Personalized Preview</DialogTitle>
+            <DialogDescription>
+              Previewing email for {previewLead?.firstName} {previewLead?.lastName} ({previewLead?.email})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            {isPreviewLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-4">
+                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground">Generating personalized preview...</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Subject</Label>
+                  <div className="p-3 bg-muted rounded-md text-sm font-medium">
+                    {previewSubject}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Body</Label>
+                  <div className="p-4 bg-muted rounded-md text-sm whitespace-pre-wrap min-h-[200px]">
+                    {previewBody}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

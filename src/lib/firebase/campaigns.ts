@@ -115,6 +115,8 @@ export const duplicateCampaign = async (userId: string, campaign: Campaign): Pro
     aiGenerations: 0,
     aiFallbacks: 0,
     aiFailures: 0,
+    aiTokensUsed: 0,
+    aiTotalTimeMs: 0,
     currentStep: 0,
     currentLeadIndex: 0,
     isProcessing: false,

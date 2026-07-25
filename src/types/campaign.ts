@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const AIPersonalizationSchema = z.object({
   enabled: z.boolean().default(false),
-  strength: z.enum(["Low", "Medium", "High"]).default("Low"),
+  mode: z.enum(["Basic", "Smart", "Deep"]).default("Basic"),
   fallbackBehavior: z.enum(["Original", "Skip", "Retry"]).default("Original")
 });
 
@@ -83,6 +83,8 @@ export const CampaignSchema = z.object({
   aiGenerations: z.number().default(0),
   aiFallbacks: z.number().default(0),
   aiFailures: z.number().default(0),
+  aiTokensUsed: z.number().default(0),
+  aiTotalTimeMs: z.number().default(0),
   
   dailyEmailsSent: z.number().default(0),
   dailyEmailsSentDate: z.string().optional().nullable(), // YYYY-MM-DD
@@ -113,7 +115,9 @@ export const CampaignLeadProgressSchema = z.object({
     body: z.string(),
     generatedAt: z.number(),
     modelUsed: z.string(),
-    variationStrength: z.string()
+    mode: z.string(),
+    tokens: z.number().optional(),
+    timeMs: z.number().optional()
   })).default({})
 });
 

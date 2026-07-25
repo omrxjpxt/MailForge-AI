@@ -126,11 +126,11 @@ export async function processEngineTick(uid: string) {
         let baseSubject = node.subject;
         let baseBody = node.body;
         let modelUsed = "none";
-        let variationStrength = "none";
+        let personalizationMode = "Basic";
         
         const aiSettings = campaign.aiPersonalization;
         
-        if (aiSettings?.enabled) {
+        if (aiSettings?.enabled && aiSettings.mode !== "Basic") {
           // Check if already generated
           const cache = progress.generatedEmailCache || {};
           const cachedVariation = cache[node.stepId];
@@ -139,15 +139,21 @@ export async function processEngineTick(uid: string) {
             baseSubject = cachedVariation.subject;
             baseBody = cachedVariation.body;
             modelUsed = cachedVariation.modelUsed;
-            variationStrength = cachedVariation.variationStrength;
+            personalizationMode = cachedVariation.mode;
           } else {
             // Need to generate
             try {
-              const generated = await generateAIEmailVariation(node.subject, node.body, aiSettings.strength);
+              const generated = await generateAIEmailVariation(
+                node.subject, 
+                node.body, 
+                lead, 
+                aiSettings.mode as "Smart" | "Deep", 
+                campaign.name
+              );
               baseSubject = generated.subject;
               baseBody = generated.body;
               modelUsed = generated.modelUsed;
-              variationStrength = aiSettings.strength;
+              personalizationMode = aiSettings.mode;
               
               // Save to cache before sending, in case Gmail fails
               await leadProgressDoc.ref.update({
@@ -156,12 +162,16 @@ export async function processEngineTick(uid: string) {
                   body: baseBody,
                   generatedAt: Date.now(),
                   modelUsed,
-                  variationStrength
+                  mode: personalizationMode,
+                  tokens: generated.tokensUsed,
+                  timeMs: generated.timeMs
                 }
               });
               
               await campDoc.ref.update({
-                aiGenerations: FieldValue.increment(1)
+                aiGenerations: FieldValue.increment(1),
+                aiTokensUsed: FieldValue.increment(generated.tokensUsed),
+                aiTotalTimeMs: FieldValue.increment(generated.timeMs)
               });
             } catch (error) {
               console.error(`AI Generation failed for lead ${progress.leadId}:`, error);
@@ -237,7 +247,7 @@ export async function processEngineTick(uid: string) {
             generatedSubject: aiSettings?.enabled ? baseSubject : null, // Audit trail
             generatedBody: aiSettings?.enabled ? baseBody : null,
             modelUsed,
-            variationStrength
+            mode: personalizationMode
           });
 
           await batch.commit();

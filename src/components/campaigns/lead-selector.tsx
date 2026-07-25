@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase/client";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { Lead } from "@/types/lead";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2, Users } from "lucide-react";
+import { Search, Loader2, Users, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -18,9 +18,10 @@ interface LeadSelectorProps {
   selectedLeadIds: string[];
   onChange: (leadIds: string[]) => void;
   onHasLeadsChange?: (hasLeads: boolean) => void;
+  onPreviewLead?: (lead: Lead) => void;
 }
 
-export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange }: LeadSelectorProps) {
+export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPreviewLead }: LeadSelectorProps) {
   const { user, loading: authLoading } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -160,6 +161,7 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange }: Le
                   <th className="py-2 px-2 font-medium">Contact</th>
                   <th className="py-2 px-2 font-medium">Company</th>
                   <th className="py-2 px-4 font-medium text-right">Status</th>
+                  {onPreviewLead && <th className="py-2 px-4 font-medium text-right">Preview</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
@@ -196,6 +198,21 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange }: Le
                         {lead.status}
                       </Badge>
                     </td>
+                    {onPreviewLead && (
+                      <td className="py-2 px-4 text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            onPreviewLead(lead);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

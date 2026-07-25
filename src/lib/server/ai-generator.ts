@@ -1,36 +1,51 @@
 import { generateWithFallback, getWorkingModel } from "@/lib/ai";
+import { Lead } from "@/types/lead";
+import { Schema, Type } from "@google/genai";
 
 export async function generateAIEmailVariation(
   originalSubject: string,
   originalBody: string,
-  strength: "Low" | "Medium" | "High"
-): Promise<{ subject: string; body: string; modelUsed: string }> {
+  leadData: Partial<Lead>,
+  mode: "Smart" | "Deep",
+  campaignGoal?: string
+): Promise<{ subject: string; body: string; modelUsed: string; tokensUsed: number; timeMs: number }> {
+  
+  const startTime = Date.now();
+  
+  // Clean lead data by removing empty or null fields to avoid AI hallucinating missing info
+  const cleanedLeadData = Object.entries(leadData).reduce((acc, [key, value]) => {
+    if (value && String(value).trim() !== "") {
+      acc[key] = value;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+
   let instructions = "";
   
-  if (strength === "Low") {
-    instructions = "Make very minor wording tweaks. Keep it 95% identical to the original.";
-  } else if (strength === "Medium") {
-    instructions = "Restructure sentences, change greetings and transitions slightly, but keep the exact same flow.";
-  } else if (strength === "High") {
-    instructions = "Completely rewrite the email for a fresh flow and different sentence structure while keeping the exact same intent and meaning.";
+  if (mode === "Smart") {
+    instructions = `Rewrite ONLY the opening paragraph of the email using the provided lead data. The goal is to create a highly personalized hook that feels 1:1. 
+The rest of the email (value prop, offer, CTA, links) MUST remain completely unchanged.
+If a piece of lead data (like industry or jobTitle) is missing, do not attempt to use it.`;
+  } else if (mode === "Deep") {
+    instructions = `Rewrite the entire email to be deeply personalized for this specific lead based on their data. 
+Make it sound natural, conversational, and tailored to their profile.
+CRITICAL: You must preserve the core offer, the Call To Action (CTA), pricing, calendar links, and any URLs. Do not change the overall tone drastically.`;
   }
 
-  const prompt = `You are an elite cold email copywriter. Your task is to generate a unique variation of the provided cold email.
+  const prompt = `You are an elite cold email copywriter. Your task is to personalize a cold email for a specific lead.
 
-STRENGTH LEVEL: ${strength}
+MODE: ${mode}
 INSTRUCTIONS: ${instructions}
+CAMPAIGN GOAL: ${campaignGoal || "Not specified"}
 
 CRITICAL RULES:
-1. NEVER modify any placeholders (e.g., {{firstName}}, {{company}}, etc). They MUST survive the rewrite EXACTLY as they appear.
+1. NEVER modify any placeholders (e.g., {{firstName}}, {{company}}, etc). They MUST survive the rewrite EXACTLY as they appear, unless you are organically replacing them with the real lead data provided. Actually, DO NOT replace placeholders with real data in the text—keep the placeholders intact so the backend can swap them later. 
 2. NEVER modify the Call To Action (CTA), pricing, calendar links, or any URLs.
-3. NEVER add new placeholders or hallucinate information not present in the original.
-4. ONLY return a valid JSON object. Do not wrap in markdown blocks.
+3. NEVER hallucinate missing lead data. If "industry" is not provided, do not say "Since you are in the {{industry}} industry". Omit it naturally.
+4. ONLY return a valid JSON object.
 
-JSON FORMAT REQUIRED:
-{
-  "subject": "The rewritten subject line",
-  "body": "The rewritten body text including preserved placeholders"
-}
+LEAD DATA (Use this context to personalize):
+${JSON.stringify(cleanedLeadData, null, 2)}
 
 ORIGINAL SUBJECT:
 ${originalSubject}
@@ -39,13 +54,28 @@ ORIGINAL BODY:
 ${originalBody}
 `;
 
+  const responseSchema: Schema = {
+    type: Type.OBJECT,
+    properties: {
+      subject: {
+        type: Type.STRING,
+        description: "The personalized subject line."
+      },
+      body: {
+        type: Type.STRING,
+        description: "The personalized email body."
+      }
+    },
+    required: ["subject", "body"]
+  };
+
   try {
     const res = await generateWithFallback(prompt, {
       responseMimeType: "application/json",
-      temperature: strength === "Low" ? 0.2 : strength === "Medium" ? 0.7 : 0.9,
+      responseSchema,
+      temperature: mode === "Smart" ? 0.4 : 0.7,
     });
     
-    // Attempt to parse JSON response
     const text = res.text?.replace(/^```json\n|\n```$/g, "").trim() || "{}";
     const parsed = JSON.parse(text);
     
@@ -68,15 +98,19 @@ ${originalBody}
       }
     }
 
+    const timeMs = Date.now() - startTime;
+    // Usage metadata is attached to the Gemini response object.
+    const tokensUsed = res.usageMetadata?.totalTokenCount || 0;
+
     return {
       subject: parsed.subject,
       body: parsed.body,
-      // The current model is somewhat abstracted inside generateWithFallback, 
-      // but assuming the wrapper resolves to the successful model.
-      modelUsed: getWorkingModel(), 
+      modelUsed: getWorkingModel(),
+      tokensUsed,
+      timeMs
     };
   } catch (error: any) {
-    console.error("AI Variation Generation Failed:", error);
+    console.error(`AI Lead Personalization Failed (Mode: ${mode}):`, error);
     throw error;
   }
 }
