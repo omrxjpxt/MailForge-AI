@@ -7,7 +7,7 @@ import {
   deleteDoc, 
   writeBatch
 } from "firebase/firestore";
-import { Campaign, CampaignInput } from "@/types/campaign";
+import { Campaign, CampaignInput, ExecutionNode, CampaignLeadProgress } from "@/types/campaign";
 
 export const getCampaignsCollection = (userId: string) => {
   return collection(db, "users", userId, "campaigns");
@@ -16,9 +16,27 @@ export const getCampaignsCollection = (userId: string) => {
 export const createCampaign = async (userId: string, data: CampaignInput): Promise<string> => {
   const campaignsRef = getCampaignsCollection(userId);
   const newDocRef = doc(campaignsRef);
+  // Translate UI steps to ExecutionNodes graph
+  const executionNodes: ExecutionNode[] = [];
   
+  if (data.steps && data.steps.length > 0) {
+    data.steps.forEach((step, index) => {
+      if (index === 0) {
+        // First step is always an email immediately
+        executionNodes.push({ type: "email", stepId: step.stepId, subject: step.subject, body: step.body });
+      } else {
+        // Subsequent steps have a wait delay, then an email
+        if (step.waitDays > 0) {
+          executionNodes.push({ type: "wait", waitDays: step.waitDays });
+        }
+        executionNodes.push({ type: "email", stepId: step.stepId, subject: step.subject, body: step.body });
+      }
+    });
+  }
+
   const campaign: Omit<Campaign, "id"> = {
     ...data,
+    executionNodes,
     userId,
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -26,9 +44,32 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
 
   await setDoc(newDocRef, campaign);
   
-  // Note: For a production execution engine, we would also initialize the 
-  // users/{uid}/campaigns/{campaignId}/leads/{leadId} subcollection here 
-  // or via a Cloud Function triggers when status changes to 'Scheduled' or 'Running'.
+  if ((campaign.status === "Scheduled" || campaign.status === "Running") && campaign.leadIds.length > 0) {
+    // Initialize CampaignLeadProgress for every lead
+    const batchSize = 400;
+    for (let i = 0; i < campaign.leadIds.length; i += batchSize) {
+      const batch = writeBatch(db);
+      const chunk = campaign.leadIds.slice(i, i + batchSize);
+      
+      chunk.forEach(leadId => {
+        const leadRef = doc(db, "users", userId, "campaigns", newDocRef.id, "campaignLeads", leadId);
+        const progress: CampaignLeadProgress = {
+          leadId,
+          campaignId: newDocRef.id,
+          currentStepIndex: 0,
+          status: "Running",
+          nextExecutionAt: campaign.scheduledAt || Date.now(),
+          lastEmailSentAt: null,
+          hasReplied: false,
+          completed: false,
+          error: null
+        };
+        batch.set(leadRef, progress);
+      });
+      
+      await batch.commit();
+    }
+  }
   
   return newDocRef.id;
 };

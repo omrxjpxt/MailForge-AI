@@ -19,6 +19,21 @@ export const CampaignStepSchema = z.object({
   status: z.enum(["Pending", "Active", "Completed"]).default("Pending")
 });
 
+export const ExecutionNodeSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("wait"),
+    waitDays: z.number()
+  }),
+  z.object({
+    type: z.literal("email"),
+    stepId: z.string(),
+    subject: z.string(),
+    body: z.string()
+  })
+]);
+
+export type ExecutionNode = z.infer<typeof ExecutionNodeSchema>;
+
 export const CampaignSchema = z.object({
   id: z.string().optional(),
   userId: z.string(),
@@ -37,6 +52,7 @@ export const CampaignSchema = z.object({
   leadIds: z.array(z.string()).default([]), // Selected lead IDs
   templateId: z.string().optional().nullable(), // Original template ID (if any)
   steps: z.array(CampaignStepSchema).default([]),
+  executionNodes: z.array(ExecutionNodeSchema).optional(),
   
   dailyLimit: z.number().min(1).default(50),
   delayBetweenEmails: z.number().min(0).default(0), // in seconds/minutes, up to implementation
@@ -70,15 +86,16 @@ export type CampaignInput = z.infer<typeof CampaignInputSchema>;
 export type CampaignStatus = z.infer<typeof CampaignStatusEnum>;
 
 // Schema for the subcollection elements: users/{uid}/campaigns/{campaignId}/leads/{leadId}
-export const CampaignLeadSchema = z.object({
+export const CampaignLeadProgressSchema = z.object({
   leadId: z.string(),
-  status: z.enum(["Pending", "Sent", "Opened", "Replied", "Bounced", "Failed", "Completed"]).default("Pending"),
-  sentAt: z.number().optional().nullable(),
-  openedAt: z.number().optional().nullable(),
-  repliedAt: z.number().optional().nullable(),
-  failedAt: z.number().optional().nullable(),
-  error: z.string().optional().nullable(),
-  stepCompleted: z.number().default(0) // Which step index they are currently on/completed
+  campaignId: z.string(),
+  currentStepIndex: z.number().default(0), // Pointer to the execution node
+  status: z.enum(["Running", "Paused", "Completed", "Failed", "Replied"]).default("Running"),
+  nextExecutionAt: z.number().optional().nullable(),
+  lastEmailSentAt: z.number().optional().nullable(),
+  hasReplied: z.boolean().default(false),
+  completed: z.boolean().default(false),
+  error: z.string().optional().nullable()
 });
 
-export type CampaignLead = z.infer<typeof CampaignLeadSchema>;
+export type CampaignLeadProgress = z.infer<typeof CampaignLeadProgressSchema>;
