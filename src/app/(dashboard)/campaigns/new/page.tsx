@@ -29,6 +29,7 @@ export default function NewCampaignPage() {
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [hasLeads, setHasLeads] = useState(false);
   
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
@@ -282,21 +283,40 @@ export default function NewCampaignPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Controller
-              control={control}
-              name="leadIds"
-              render={({ field }) => (
-                <LeadSelector 
-                  selectedLeadIds={field.value || []} 
-                  onChange={field.onChange} 
-                />
+              <Controller
+                control={control}
+                name="leadIds"
+                render={({ field }) => (
+                  <LeadSelector 
+                    selectedLeadIds={field.value || []} 
+                    onChange={field.onChange} 
+                    onHasLeadsChange={setHasLeads}
+                  />
+                )}
+              />
+            </CardContent>
+            <CardFooter className="flex flex-col items-stretch border-t border-border pt-6 gap-4">
+              <div className="flex justify-between w-full">
+                <Button variant="ghost" onClick={handlePrev}>Back</Button>
+                <Button 
+                  onClick={handleNext}
+                  disabled={!hasLeads || !selectedLeadIds || selectedLeadIds.length === 0}
+                >
+                  Next Step
+                </Button>
+              </div>
+              
+              {!hasLeads && (
+                <p className="text-sm text-muted-foreground text-right w-full">
+                  You need at least one lead before creating a campaign.
+                </p>
               )}
-            />
-          </CardContent>
-          <CardFooter className="flex justify-between border-t border-border pt-6">
-            <Button variant="ghost" onClick={handlePrev}>Back</Button>
-            <Button onClick={handleNext}>Next Step</Button>
-          </CardFooter>
+              {hasLeads && (!selectedLeadIds || selectedLeadIds.length === 0) && (
+                <p className="text-sm text-muted-foreground text-right w-full">
+                  Select at least one lead to continue.
+                </p>
+              )}
+            </CardFooter>
         </Card>
       )}
 

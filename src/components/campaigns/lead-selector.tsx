@@ -6,17 +6,21 @@ import { db } from "@/lib/firebase/client";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { Lead } from "@/types/lead";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, Users } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 interface LeadSelectorProps {
   selectedLeadIds: string[];
   onChange: (leadIds: string[]) => void;
+  onHasLeadsChange?: (hasLeads: boolean) => void;
 }
 
-export function LeadSelector({ selectedLeadIds, onChange }: LeadSelectorProps) {
+export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange }: LeadSelectorProps) {
   const { user, loading: authLoading } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +43,9 @@ export function LeadSelector({ selectedLeadIds, onChange }: LeadSelectorProps) {
       const newLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Lead));
       setLeads(newLeads);
       setIsLoading(false);
+      if (onHasLeadsChange) {
+        onHasLeadsChange(newLeads.length > 0);
+      }
     });
 
     return () => unsubscribe();
@@ -82,6 +89,46 @@ export function LeadSelector({ selectedLeadIds, onChange }: LeadSelectorProps) {
     return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="relative">
+          <Skeleton className="h-10 w-full rounded-md" />
+        </div>
+        <div className="border border-border rounded-lg overflow-hidden bg-card">
+          <div className="p-4 space-y-4">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (leads.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-lg bg-muted/10">
+        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <Users className="h-6 w-6 text-primary" />
+        </div>
+        <h3 className="font-semibold text-lg mb-2">No leads available</h3>
+        <p className="text-sm text-muted-foreground max-w-sm mb-6">
+          Create or import leads before launching your first campaign.
+        </p>
+        <div className="flex items-center gap-4">
+          <Button asChild>
+            <Link href="/leads?action=create">Add Lead</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/leads?action=import">Import CSV</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -96,11 +143,7 @@ export function LeadSelector({ selectedLeadIds, onChange }: LeadSelectorProps) {
 
       <div className="border border-border rounded-lg overflow-hidden bg-card">
         <div className="max-h-[300px] overflow-y-auto">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : filteredLeads.length === 0 ? (
+          {filteredLeads.length === 0 ? (
             <div className="flex justify-center items-center h-32 text-sm text-muted-foreground">
               No leads found.
             </div>
