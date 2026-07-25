@@ -3,6 +3,7 @@ import { Campaign, CampaignLeadProgress } from "@/types/campaign";
 import { Lead } from "@/types/lead";
 import { google } from "googleapis";
 import { FieldValue } from "firebase-admin/firestore";
+import { generateAIEmailVariation } from "./ai-generator";
 
 /**
  * Main Engine tick for a user.
@@ -120,10 +121,75 @@ export async function processEngineTick(uid: string) {
            });
            continue;
         }
+
+        // --- AI Personalization Logic ---
+        let baseSubject = node.subject;
+        let baseBody = node.body;
+        let modelUsed = "none";
+        let variationStrength = "none";
+        
+        const aiSettings = campaign.aiPersonalization;
+        
+        if (aiSettings?.enabled) {
+          // Check if already generated
+          const cache = progress.generatedEmailCache || {};
+          const cachedVariation = cache[node.stepId];
+          
+          if (cachedVariation) {
+            baseSubject = cachedVariation.subject;
+            baseBody = cachedVariation.body;
+            modelUsed = cachedVariation.modelUsed;
+            variationStrength = cachedVariation.variationStrength;
+          } else {
+            // Need to generate
+            try {
+              const generated = await generateAIEmailVariation(node.subject, node.body, aiSettings.strength);
+              baseSubject = generated.subject;
+              baseBody = generated.body;
+              modelUsed = generated.modelUsed;
+              variationStrength = aiSettings.strength;
+              
+              // Save to cache before sending, in case Gmail fails
+              await leadProgressDoc.ref.update({
+                [`generatedEmailCache.${node.stepId}`]: {
+                  subject: baseSubject,
+                  body: baseBody,
+                  generatedAt: Date.now(),
+                  modelUsed,
+                  variationStrength
+                }
+              });
+              
+              await campDoc.ref.update({
+                aiGenerations: FieldValue.increment(1)
+              });
+            } catch (error) {
+              console.error(`AI Generation failed for lead ${progress.leadId}:`, error);
+              
+              await campDoc.ref.update({
+                aiFailures: FieldValue.increment(1)
+              });
+              
+              if (aiSettings.fallbackBehavior === "Original") {
+                await campDoc.ref.update({ aiFallbacks: FieldValue.increment(1) });
+                // baseSubject and baseBody remain the original node defaults
+              } else if (aiSettings.fallbackBehavior === "Skip") {
+                await leadProgressDoc.ref.update({
+                  status: "Failed",
+                  error: "AI generation failed and fallback is Skip"
+                });
+                continue; // Skip this lead
+              } else if (aiSettings.fallbackBehavior === "Retry") {
+                // Do not update pointer, let it retry on next tick
+                continue; 
+              }
+            }
+          }
+        }
         
         try {
-          const subject = personalizeText(node.subject, lead);
-          const body = personalizeText(node.body, lead);
+          const subject = personalizeText(baseSubject, lead);
+          const body = personalizeText(baseBody, lead);
           const raw = createMimeMessage(lead.email, subject, body);
 
           const res = await gmail.users.messages.send({
@@ -164,10 +230,14 @@ export async function processEngineTick(uid: string) {
             stepNumber: progress.currentStepIndex + 1,
             gmailMessageId: messageId,
             gmailThreadId: threadId,
-            subject,
-            body,
+            subject, // The actual sent text
+            body,    // The actual sent text
             sentAt: Date.now(),
-            status: "Sent"
+            status: "Sent",
+            generatedSubject: aiSettings?.enabled ? baseSubject : null, // Audit trail
+            generatedBody: aiSettings?.enabled ? baseBody : null,
+            modelUsed,
+            variationStrength
           });
 
           await batch.commit();

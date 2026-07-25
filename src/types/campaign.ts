@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export const AIPersonalizationSchema = z.object({
+  enabled: z.boolean().default(false),
+  strength: z.enum(["Low", "Medium", "High"]).default("Low"),
+  fallbackBehavior: z.enum(["Original", "Skip", "Retry"]).default("Original")
+});
+
 export const CampaignStatusEnum = z.enum([
   "Draft",
   "Scheduled",
@@ -41,6 +47,8 @@ export const CampaignSchema = z.object({
   description: z.string().optional(),
   status: CampaignStatusEnum.default("Draft"),
   
+  aiPersonalization: AIPersonalizationSchema.optional(),
+  
   // Future-proof fields for execution engine
   sendingAccountId: z.string().optional().nullable(),
   currentStep: z.number().default(0),
@@ -72,6 +80,10 @@ export const CampaignSchema = z.object({
   failures: z.number().default(0),
   progress: z.number().default(0), // Percentage 0-100
   
+  aiGenerations: z.number().default(0),
+  aiFallbacks: z.number().default(0),
+  aiFailures: z.number().default(0),
+  
   dailyEmailsSent: z.number().default(0),
   dailyEmailsSentDate: z.string().optional().nullable(), // YYYY-MM-DD
   
@@ -95,7 +107,14 @@ export const CampaignLeadProgressSchema = z.object({
   lastEmailSentAt: z.number().optional().nullable(),
   hasReplied: z.boolean().default(false),
   completed: z.boolean().default(false),
-  error: z.string().optional().nullable()
+  error: z.string().optional().nullable(),
+  generatedEmailCache: z.record(z.string(), z.object({
+    subject: z.string(),
+    body: z.string(),
+    generatedAt: z.number(),
+    modelUsed: z.string(),
+    variationStrength: z.string()
+  })).default({})
 });
 
 export type CampaignLeadProgress = z.infer<typeof CampaignLeadProgressSchema>;

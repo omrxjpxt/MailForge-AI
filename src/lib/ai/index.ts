@@ -67,6 +67,10 @@ export function handleAIError(error: unknown): string {
   return "Something went wrong.";
 }
 
+export function getWorkingModel(): string {
+  return cachedWorkingModel || PREFERRED_MODELS[0];
+}
+
 /**
  * Robust wrapper that tries models in order of preference until one succeeds.
  * It caches the first successful model to avoid latency on subsequent calls.

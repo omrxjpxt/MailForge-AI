@@ -62,7 +62,8 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
           lastEmailSentAt: null,
           hasReplied: false,
           completed: false,
-          error: null
+          error: null,
+          generatedEmailCache: {}
         };
         batch.set(leadRef, progress);
       });
@@ -101,6 +102,7 @@ export const duplicateCampaign = async (userId: string, campaign: Campaign): Pro
     timezone,
     totalLeads,
     status: "Draft",
+    aiPersonalization: campaign.aiPersonalization,
     
     // Reset metrics and execution state
     emailsSent: 0,
@@ -110,6 +112,9 @@ export const duplicateCampaign = async (userId: string, campaign: Campaign): Pro
     bounces: 0,
     failures: 0,
     progress: 0,
+    aiGenerations: 0,
+    aiFallbacks: 0,
+    aiFailures: 0,
     currentStep: 0,
     currentLeadIndex: 0,
     isProcessing: false,

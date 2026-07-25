@@ -55,6 +55,11 @@ export default function NewCampaignPage() {
       dailyLimit: 50,
       delayBetweenEmails: 0,
       timezone: "UTC",
+      aiPersonalization: {
+        enabled: false,
+        strength: "Low",
+        fallbackBehavior: "Original"
+      }
     }
   });
 
@@ -280,6 +285,86 @@ export default function NewCampaignPage() {
                   {...register("delayBetweenEmails", { valueAsNumber: true })} 
                 />
               </div>
+            </div>
+
+            <div className="border-t border-border pt-4 mt-2 space-y-4">
+              <Label className="text-base">Email Personalization</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div 
+                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${!watch("aiPersonalization.enabled") ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
+                  onClick={() => setValue("aiPersonalization.enabled", false)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${!watch("aiPersonalization.enabled") ? "border-primary" : "border-muted-foreground"}`}>
+                      {!watch("aiPersonalization.enabled") && <div className="w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                    <span className="font-medium">Send the same email to everyone</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2 ml-7">
+                    Every recipient receives the exact same email. Only template placeholders are replaced.
+                  </p>
+                </div>
+
+                <div 
+                  className={`border rounded-lg p-4 cursor-pointer transition-colors ${watch("aiPersonalization.enabled") ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}
+                  onClick={() => setValue("aiPersonalization.enabled", true)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${watch("aiPersonalization.enabled") ? "border-primary" : "border-muted-foreground"}`}>
+                      {watch("aiPersonalization.enabled") && <div className="w-2 h-2 rounded-full bg-primary" />}
+                    </div>
+                    <span className="font-medium flex items-center gap-2">
+                      Generate unique AI variation <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2 ml-7">
+                    Every recipient receives a natural, unique rewrite of your email. Placeholders and links are preserved.
+                  </p>
+                </div>
+              </div>
+
+              {watch("aiPersonalization.enabled") && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 pl-1">
+                  <div className="space-y-2">
+                    <Label>Variation Strength</Label>
+                    <Controller
+                      control={control}
+                      name="aiPersonalization.strength"
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select strength" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Low">Low (95% identical, minor tweaks)</SelectItem>
+                            <SelectItem value="Medium">Medium (Sentence restructuring)</SelectItem>
+                            <SelectItem value="High">High (Completely rewritten flow)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fallback Behavior (If AI Fails)</Label>
+                    <Controller
+                      control={control}
+                      name="aiPersonalization.fallbackBehavior"
+                      render={({ field }) => (
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select fallback" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Original">Send Original Template</SelectItem>
+                            <SelectItem value="Skip">Skip Recipient</SelectItem>
+                            <SelectItem value="Retry">Retry Later</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex justify-end">
