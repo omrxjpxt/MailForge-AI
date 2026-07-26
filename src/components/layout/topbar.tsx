@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { GlobalSearch } from "./global-search";
 import { NotificationDropdown } from "./notification-dropdown";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sidebar } from "./sidebar";
 
 export function Topbar() {
   const router = useRouter();
@@ -37,9 +39,21 @@ export function Topbar() {
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background px-6 shadow-sm">
       <div className="flex items-center gap-4 flex-1">
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="h-5 w-5" />
-        </Button>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle mobile menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[280px] p-0 border-r-0 sm:max-w-[280px]">
+            <div className="sr-only">
+              <SheetTitle>Mobile Navigation</SheetTitle>
+              <SheetDescription>Mobile navigation menu</SheetDescription>
+            </div>
+            <Sidebar className="w-full border-none" />
+          </SheetContent>
+        </Sheet>
         <GlobalSearch />
       </div>
 

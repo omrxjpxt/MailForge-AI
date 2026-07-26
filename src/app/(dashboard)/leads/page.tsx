@@ -17,6 +17,7 @@ import { UserPlus, Loader2, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteLead, duplicateLead, archiveLead, bulkDeleteLeads, bulkUpdateStatus } from "@/lib/firebase/leads";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSearchParams } from "next/navigation";
 
 const PAGE_SIZE = 50;
 
@@ -48,6 +49,14 @@ export default function LeadsPage() {
   // Dialog states
   const [isLeadDialogOpen, setIsLeadDialogOpen] = useState(false);
   const [leadToEdit, setLeadToEdit] = useState<Lead | null>(null);
+  
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams?.get("action") === "create") {
+      setIsLeadDialogOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (authLoading || !user) return;

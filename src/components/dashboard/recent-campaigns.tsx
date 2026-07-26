@@ -4,10 +4,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Mail, MoreHorizontal, Filter } from "lucide-react";
+import { Mail, ArrowRight, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DashboardData } from "@/hooks/use-dashboard-data";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface RecentCampaignsProps {
   campaigns: DashboardData["recentCampaigns"];
@@ -23,9 +24,11 @@ export function RecentCampaigns({ campaigns }: RecentCampaignsProps) {
           <CardTitle className="text-base font-semibold">Recent Campaigns</CardTitle>
           <CardDescription>Managing your active outreach pipelines</CardDescription>
         </div>
-        <Button variant="outline" size="sm" className="h-8 gap-1">
-          <Filter className="h-3.5 w-3.5" />
-          <span className="sr-only sm:not-sr-only">Filter</span>
+        <Button variant="outline" size="sm" className="h-8 gap-1" asChild>
+          <Link href="/campaigns">
+            <span className="sr-only sm:not-sr-only">View All</span>
+            <ArrowRight className="h-3.5 w-3.5 sm:ml-1" />
+          </Link>
         </Button>
       </CardHeader>
       <CardContent>
@@ -76,8 +79,11 @@ export function RecentCampaigns({ campaigns }: RecentCampaignsProps) {
                     <TableCell className="text-right text-muted-foreground">{campaign.emailsSent > 0 ? ((campaign.opens / campaign.emailsSent) * 100).toFixed(1) + '%' : '0%'}</TableCell>
                     <TableCell className="text-right text-muted-foreground">{campaign.replies}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" asChild>
+                        <Link href="/campaigns">
+                          <ArrowRight className="h-4 w-4" />
+                          <span className="sr-only">View Campaigns</span>
+                        </Link>
                       </Button>
                     </TableCell>
                   </TableRow>

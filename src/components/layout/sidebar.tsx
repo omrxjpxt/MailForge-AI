@@ -26,11 +26,11 @@ const navItems = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar text-sidebar-foreground">
+    <div className={cn("flex h-full w-64 flex-col border-r border-border bg-sidebar text-sidebar-foreground", className)}>
       {/* Logo Area */}
       <Link href="/dashboard" className="flex h-16 items-center px-6 border-b border-border/50 hover:bg-sidebar-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
         <div className="flex items-center gap-2 font-semibold">

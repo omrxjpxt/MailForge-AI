@@ -300,7 +300,7 @@ function SettingsContent() {
                   <h4 className="font-medium text-sm">Delete Account</h4>
                   <p className="text-xs text-muted-foreground">Permanently delete your data and campaigns.</p>
                 </div>
-                <Button variant="destructive">Delete Account</Button>
+                <Button variant="destructive" disabled title="Coming Soon">Coming Soon</Button>
               </div>
             </CardContent>
           </Card>
