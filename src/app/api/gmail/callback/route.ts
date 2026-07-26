@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
       await adminDb.collection("users").doc(decodedClaims.sub).set({
         gmailRefreshToken: tokens.refresh_token,
         gmailConnected: true,
+        gmailAuthError: null,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     }

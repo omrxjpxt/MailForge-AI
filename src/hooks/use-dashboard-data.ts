@@ -10,6 +10,7 @@ import { EmailTemplate } from "@/types/template";
 interface UserDocData {
   firstName?: string;
   gmailConnected?: boolean;
+  gmailAuthError?: string | null;
   onboarding?: {
     welcomeModalSeen?: boolean;
     hasSeenCelebration?: boolean;
@@ -21,6 +22,8 @@ export interface DashboardData {
   isLoading: boolean;
   error: Error | null;
   firstName: string;
+  gmailConnected: boolean;
+  gmailAuthError: string | null;
   metrics: {
     emailsSentToday: number;
     dailyLimit: number;
@@ -291,6 +294,8 @@ export function useDashboardData(): DashboardData {
     isLoading,
     error,
     firstName,
+    gmailConnected: userDocData?.gmailConnected || false,
+    gmailAuthError: userDocData?.gmailAuthError || null,
     metrics: {
       emailsSentToday,
       dailyLimit,

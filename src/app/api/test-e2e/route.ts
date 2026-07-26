@@ -45,6 +45,12 @@ export async function GET(request: NextRequest) {
       description: "Automated E2E Test",
       status: "Running",
       leadIds: [leadRef.id],
+      totalLeads: 1,
+      emailsSent: 0,
+      emailsDelivered: 0,
+      replies: 0,
+      bounces: 0,
+      opens: 0,
       aiPersonalization: { enabled: false, mode: "Basic", fallbackBehavior: "Original" },
       steps: [{ id: "step-1", subject: "E2E Test Subject", body: "Hello {{firstName}} from E2E test", waitDays: 0 }]
     };

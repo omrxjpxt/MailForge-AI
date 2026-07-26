@@ -3,6 +3,8 @@ import { Topbar } from "@/components/layout/topbar";
 import { WelcomeModal } from "@/components/dashboard/welcome-modal";
 import { Celebration } from "@/components/dashboard/celebration";
 
+import { AuthErrorBanner } from "@/components/layout/auth-error-banner";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -15,6 +17,7 @@ export default function DashboardLayout({
       </div>
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar />
+        <AuthErrorBanner />
         <main className="flex-1 overflow-y-auto bg-background/50">
           {children}
         </main>

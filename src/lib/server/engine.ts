@@ -267,6 +267,11 @@ export async function processEngineTick(uid: string) {
         } catch (error: unknown) {
            const err = error as Error;
            console.error(`Email sending failed for lead ${progress.leadId}:`, err);
+           if (err.message && (err.message.includes("invalid_grant") || err.message.includes("invalid_request"))) {
+             await handleOAuthRevocation(uid, "Your Gmail connection has expired or been revoked. Please reconnect.");
+             throw new Error("OAuth Revoked"); // Abort the engine tick for this user completely
+           }
+
            await leadProgressDoc.ref.update({
              status: "Failed",
              error: err.message || "Email failed"
@@ -319,4 +324,31 @@ function createMimeMessage(to: string, subject: string, body: string) {
   ];
   const message = messageParts.join("\n");
   return Buffer.from(message).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function handleOAuthRevocation(userId: string, errorMessage: string) {
+  const batch = adminDb.batch();
+  
+  // 1. Update user document
+  const userRef = adminDb.collection("users").doc(userId);
+  batch.update(userRef, {
+    gmailConnected: false,
+    gmailAuthError: errorMessage,
+    gmailRefreshToken: null // Clear invalid token
+  });
+
+  // 2. Pause all Running or Scheduled campaigns
+  const campaignsSnap = await adminDb.collection(`users/${userId}/campaigns`)
+    .where("status", "in", ["Running", "Scheduled"])
+    .get();
+
+  for (const doc of campaignsSnap.docs) {
+    batch.update(doc.ref, {
+      status: "Paused",
+      updatedAt: Date.now()
+    });
+  }
+
+  await batch.commit();
+  console.log(`[Engine] Revoked OAuth for user ${userId} and paused ${campaignsSnap.size} campaigns.`);
 }
