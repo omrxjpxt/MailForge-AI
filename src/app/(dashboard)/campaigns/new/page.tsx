@@ -195,7 +195,7 @@ export default function NewCampaignPage() {
       
       // Schedule immediately vs draft logic can be added here
       campaignData.totalLeads = campaignData.leadIds ? campaignData.leadIds.length : 0;
-      campaignData.status = "Scheduled"; // Launching sets to scheduled/running
+      campaignData.status = "Running"; // Launching immediately starts the campaign
       
       await createCampaign(user.uid, campaignData);
       

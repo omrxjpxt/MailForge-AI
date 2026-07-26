@@ -53,7 +53,7 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
   }  
   console.log(`[createCampaign] Received campaign.leadIds with length: ${campaign.leadIds?.length}`);
   
-  if ((campaign.status === "Scheduled" || campaign.status === "Running") && campaign.leadIds && campaign.leadIds.length > 0) {
+  if (campaign.leadIds && campaign.leadIds.length > 0) {
     // Initialize CampaignLeadProgress for every lead
     const batchSize = 400;
     for (let i = 0; i < campaign.leadIds.length; i += batchSize) {
@@ -68,7 +68,7 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
           leadId,
           campaignId: newDocRef.id,
           currentStepIndex: 0,
-          status: "Running",
+          status: campaign.status === "Draft" ? "Paused" : "Running",
           nextExecutionAt: campaign.scheduledAt || Date.now(),
           lastEmailSentAt: null,
           hasReplied: false,
