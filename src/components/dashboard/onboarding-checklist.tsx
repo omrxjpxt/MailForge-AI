@@ -90,7 +90,7 @@ export function OnboardingChecklist() {
       </CardHeader>
       <CardContent className="p-0">
         <div className="flex flex-col">
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <div 
               key={step.id} 
               className={`flex items-center justify-between p-4 border-b border-primary/10 last:border-0 hover:bg-primary/5 transition-colors ${step.isComplete ? 'opacity-70' : ''}`}

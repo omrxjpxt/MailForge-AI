@@ -7,6 +7,16 @@ import { Lead } from "@/types/lead";
 import { EmailHistory } from "@/types/history";
 import { EmailTemplate } from "@/types/template";
 
+interface UserDocData {
+  firstName?: string;
+  gmailConnected?: boolean;
+  onboarding?: {
+    hasSeenWelcome?: boolean;
+    hasSeenCelebration?: boolean;
+    isComplete?: boolean;
+  };
+}
+
 export interface DashboardData {
   isLoading: boolean;
   error: Error | null;
@@ -54,7 +64,7 @@ export function useDashboardData(): DashboardData {
   const [recentHistory, setRecentHistory] = useState<EmailHistory[]>([]);
   const [dailyLimit, setDailyLimit] = useState<number>(50); // Default to Free plan
   const [firstName, setFirstName] = useState("");
-  const [userDocData, setUserDocData] = useState<any>(null);
+  const [userDocData, setUserDocData] = useState<UserDocData | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -80,7 +90,7 @@ export function useDashboardData(): DashboardData {
       doc(db, "users", user.uid),
       (docSnap) => {
         if (docSnap.exists()) {
-          const data = docSnap.data();
+          const data = docSnap.data() as UserDocData;
           setFirstName(data.firstName || "");
           setUserDocData(data);
         }
@@ -220,9 +230,11 @@ export function useDashboardData(): DashboardData {
   
   recentHistory.forEach(hist => {
     if (hist.status === "Sent" || hist.status === "Replied") {
+      const lead = leads.find(l => l.id === hist.leadId);
+      const emailAddr = lead ? lead.email : "a lead";
       latestChangesRaw.push({
         id: `hist-${hist.id}`,
-        title: hist.status === "Sent" ? `Email sent to ${hist.toEmail}` : `Reply received from ${hist.toEmail}`,
+        title: hist.status === "Sent" ? `Email sent to ${emailAddr}` : `Reply received from ${emailAddr}`,
         time: new Date(hist.sentAt).toLocaleString(),
         timestamp: hist.sentAt,
         type: "history",

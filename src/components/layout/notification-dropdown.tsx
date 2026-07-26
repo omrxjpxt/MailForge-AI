@@ -6,14 +6,13 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/firebase/auth";
-import { collection, query, onSnapshot, orderBy, limit, doc, writeBatch, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy, limit, doc, writeBatch, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
 export interface AppNotification {

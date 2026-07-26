@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Mail, ArrowRight, Filter } from "lucide-react";
+import { Mail, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DashboardData } from "@/hooks/use-dashboard-data";
 import { useRouter } from "next/navigation";

@@ -23,7 +23,7 @@ export function Celebration() {
 
       const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-      const interval: any = setInterval(function() {
+      const interval = setInterval(function() {
         const timeLeft = animationEnd - Date.now();
 
         if (timeLeft <= 0) {
@@ -35,7 +35,7 @@ export function Celebration() {
         confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
       }, 250);
 
-      setHasFired(true);
+      setTimeout(() => setHasFired(true), 0);
 
       // Write to Firestore so it doesn't fire again
       setDoc(doc(db, "users", user.uid), {

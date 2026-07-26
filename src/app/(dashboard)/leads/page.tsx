@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { LeadFilters } from "@/components/leads/lead-filters";
 import { LeadsTable } from "@/components/leads/leads-table";
 import { LeadDialog } from "@/components/leads/lead-dialog";
@@ -21,7 +21,7 @@ import { useSearchParams } from "next/navigation";
 
 const PAGE_SIZE = 50;
 
-export default function LeadsPage() {
+function LeadsPageContent() {
   const { user, loading: authLoading } = useAuth();
   
   // Real-time Firestore state
@@ -54,7 +54,7 @@ export default function LeadsPage() {
 
   useEffect(() => {
     if (searchParams?.get("action") === "create") {
-      setIsLeadDialogOpen(true);
+      setTimeout(() => setIsLeadDialogOpen(true), 0);
     }
   }, [searchParams]);
 
@@ -341,5 +341,13 @@ export default function LeadsPage() {
         leadToEdit={leadToEdit} 
       />
     </div>
+  );
+}
+
+export default function LeadsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-[50vh]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <LeadsPageContent />
+    </Suspense>
   );
 }

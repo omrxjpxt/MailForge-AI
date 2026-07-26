@@ -36,7 +36,7 @@ export function CsvImportDialog({ existingLeads }: CsvImportDialogProps) {
 
   useEffect(() => {
     if (searchParams?.get("action") === "import") {
-      setIsOpen(true);
+      setTimeout(() => setIsOpen(true), 0);
     }
   }, [searchParams]);
 

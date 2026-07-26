@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useAuth } from "@/lib/firebase/auth";
@@ -16,7 +16,7 @@ export function WelcomeModal() {
   
   useEffect(() => {
     if (!isLoading && user && !onboarding.hasSeenWelcome) {
-      setIsOpen(true);
+      setTimeout(() => setIsOpen(true), 0);
     }
   }, [isLoading, onboarding.hasSeenWelcome, user]);
 
@@ -33,8 +33,10 @@ export function WelcomeModal() {
   if (!isOpen && onboarding.hasSeenWelcome) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (onboarding.hasSeenWelcome) setIsOpen(open);
+    }}>
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
         <div className="bg-primary/5 p-6 flex flex-col items-center justify-center text-center border-b border-border">
           <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
             <Sparkles className="h-8 w-8 text-primary" />
