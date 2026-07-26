@@ -15,26 +15,26 @@ export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
   
   useEffect(() => {
-    if (!isLoading && user && !onboarding.hasSeenWelcome) {
+    if (!isLoading && user && !onboarding.welcomeModalSeen) {
       setTimeout(() => setIsOpen(true), 0);
     }
-  }, [isLoading, onboarding.hasSeenWelcome, user]);
+  }, [isLoading, onboarding.welcomeModalSeen, user]);
 
   const handleGetStarted = async () => {
     setIsOpen(false);
     if (user) {
       await setDoc(doc(db, "users", user.uid), {
-        onboarding: { hasSeenWelcome: true }
+        onboarding: { welcomeModalSeen: true }
       }, { merge: true });
     }
   };
 
   // Don't render the modal container until we know it's needed
-  if (!isOpen && onboarding.hasSeenWelcome) return null;
+  if (!isOpen && onboarding.welcomeModalSeen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      if (onboarding.hasSeenWelcome) setIsOpen(open);
+      if (onboarding.welcomeModalSeen) setIsOpen(open);
     }}>
       <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
         <div className="bg-primary/5 p-6 flex flex-col items-center justify-center text-center border-b border-border">

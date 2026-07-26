@@ -11,7 +11,7 @@ interface UserDocData {
   firstName?: string;
   gmailConnected?: boolean;
   onboarding?: {
-    hasSeenWelcome?: boolean;
+    welcomeModalSeen?: boolean;
     hasSeenCelebration?: boolean;
     isComplete?: boolean;
   };
@@ -39,15 +39,15 @@ export interface DashboardData {
   latestChanges: { id: string; title: string; time: string; type: "campaign" | "lead" | "template" | "history"; timestamp: number; color: string }[];
   performanceData: { name: string; sent: number; replies: number }[];
   onboarding: {
-    hasSeenWelcome: boolean;
-    hasSeenCelebration: boolean;
-    isComplete: boolean;
-    steps: {
-      gmailConnected: boolean;
-      leadCreated: boolean;
-      templateCreated: boolean;
-      campaignCreated: boolean;
-      campaignLaunched: boolean;
+    welcomeModalSeen?: boolean;
+    hasSeenCelebration?: boolean;
+    isComplete?: boolean;
+    steps?: {
+      gmailConnected?: boolean;
+      firstLeadCreated?: boolean;
+      firstTemplateCreated?: boolean;
+      firstCampaignCreated?: boolean;
+      firstCampaignLaunched?: boolean;
     };
   };
 }
@@ -65,6 +65,7 @@ export function useDashboardData(): DashboardData {
   const [dailyLimit, setDailyLimit] = useState<number>(50); // Default to Free plan
   const [firstName, setFirstName] = useState("");
   const [userDocData, setUserDocData] = useState<UserDocData | null>(null);
+  const [isUserDocLoaded, setIsUserDocLoaded] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -93,9 +94,16 @@ export function useDashboardData(): DashboardData {
           const data = docSnap.data() as UserDocData;
           setFirstName(data.firstName || "");
           setUserDocData(data);
+        } else {
+          // Explicitly set an empty object if the document doesn't exist yet
+          setUserDocData({} as UserDocData);
         }
+        setIsUserDocLoaded(true);
       },
-      (err) => setError(err)
+      (err) => {
+        setError(err);
+        setIsUserDocLoaded(true);
+      }
     );
 
     const unsubscribeCampaigns = onSnapshot(
@@ -146,12 +154,12 @@ export function useDashboardData(): DashboardData {
   }, [user]);
 
   useEffect(() => {
-    if (user && campaigns && leads && templates && recentHistory) {
+    if (user && isUserDocLoaded && campaigns && leads && templates && recentHistory) {
       // Data is mostly loaded when we have the snapshot, even if empty.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     }
-  }, [user, campaigns, leads, templates, recentHistory]);
+  }, [user, isUserDocLoaded, campaigns, leads, templates, recentHistory]);
 
   // Derived Metrics
   const todayDateString = new Date().toISOString().split("T")[0];
@@ -267,7 +275,7 @@ export function useDashboardData(): DashboardData {
 
   // Derive Onboarding State
   const onboarding = {
-    hasSeenWelcome: userDocData?.onboarding?.hasSeenWelcome || false,
+    welcomeModalSeen: userDocData?.onboarding?.welcomeModalSeen || false,
     hasSeenCelebration: userDocData?.onboarding?.hasSeenCelebration || false,
     isComplete: userDocData?.onboarding?.isComplete || false,
     steps: {
