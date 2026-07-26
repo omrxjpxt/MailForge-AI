@@ -1,0 +1,79 @@
+[Engine] Tick started for user: OXBQzA8ZUqgWQjJ0rOYCaijqdaj1
+[Engine TRACE] 1. Campaigns found: 2 running campaigns for user OXBQzA8ZUqgWQjJ0rOYCaijqdaj1
+[Engine TRACE] 2. Campaign selected: JQ3ftu5k5iSbYRfOwWUv (status: Running)
+[Engine TRACE] 3. campaignLeads found: 0 eligible campaignLeads for campaign JQ3ftu5k5iSbYRfOwWUv
+[Engine TRACE] 4. Eligible leads after filtering: 0
+[Engine] Diagnostic: Is campaignLeads subcollection completely empty? NO
+[Engine TRACE] 2. Campaign selected: dSXwVq4Nk4wOJkKvjA41 (status: Running)
+[Engine TRACE] 3. campaignLeads found: 1 eligible campaignLeads for campaign dSXwVq4Nk4wOJkKvjA41
+[Engine TRACE] 4. Eligible leads after filtering: 1
+[Engine] Diagnostic: Is campaignLeads subcollection completely empty? NO
+[Engine TRACE] 5. Current lead ID: MfkwoZkhsCS3HanalVsS
+[Engine TRACE] 6. nextExecutionAt value: 1785100838875
+[Engine TRACE] 7. Status value: Running
+[Engine TRACE] 8. Is the lead skipped? NO.
+
+========================
+1. Campaign ID: dSXwVq4Nk4wOJkKvjA41
+2. CampaignLead ID: MfkwoZkhsCS3HanalVsS
+3. Lead email: trace@example.com
+4. Template ID: step-1
+5. OAuth scopes: email, https://www.googleapis.com/auth/userinfo.email, openid
+6. Access token exists? true
+7. Refresh token exists? true
+8. Gmail API request body (first 100 chars): VG86IHRyYWNlQGV4YW1wbGUuY29tClN1YmplY3Q6ID0_dXRmLTg_Qj9WSEpoWTJVZ1UzVmlhbVZqZEE9PT89Ck1JTUUtVmVyc2lv...
+9. Gmail API HTTP status: 403
+10. Full Google error object:
+{
+  "stack": "Error: Request had insufficient authentication scopes.\n    at Gaxios._request (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_16cv388._.js:762:23)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async OAuth2Client.requestAsync (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_0swz9m6._.js:1392:20)\n    at async createAPIRequestAsync (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/[root-of-the-server]__1lor1in._.js:8334:25)\n    at async processEngineTick (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/[root-of-the-server]__0bg05wb._.js:650:33)\n    at async GET (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/[root-of-the-server]__0bg05wb._.js:892:13)\n    at async AppRouteRouteModule.do (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:40131)\n    at async AppRouteRouteModule.handle (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:47411)\n    at async responseGenerator (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_next_11kez_j._.js:16549:38)\n    at async AppRouteRouteModule.handleResponse (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:228552)\n    at async handleResponse (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_next_11kez_j._.js:16612:32)\n    at async Module.handler (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_next_11kez_j._.js:16666:13)\n    at async DevServer.renderToResponseWithComponentsImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:1462:9)\n    at async DevServer.renderPageComponent (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:1514:24)\n    at async DevServer.renderToResponseImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:1564:32)\n    at async DevServer.pipeImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:1044:25)\n    at async NextNodeServer.handleCatchallRenderRequest (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/next-server.js:338:17)\n    at async DevServer.handleRequestImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:935:17)\n    at async /Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/dev/next-dev-server.js:394:20\n    at async Span.traceAsyncFn (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/trace/trace.js:164:20)\n    at async DevServer.handleRequest (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/dev/next-dev-server.js:390:24)\n    at async invokeRender (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/lib/router-server.js:266:21)\n    at async handleRequest (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/lib/router-server.js:465:24)\n    at async requestHandlerImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/lib/router-server.js:514:13)\n    at async Server.requestListener (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/lib/start-server.js:225:13)",
+  "message": "Request had insufficient authentication scopes.",
+  "cause": {
+    "message": "Request had insufficient authentication scopes.",
+    "code": 403,
+    "status": "PERMISSION_DENIED"
+  },
+  "config": {},
+  "response": {
+    "config": {},
+    "status": 403
+  },
+  "code": 403,
+  "status": 403
+}
+11. Full stack trace:
+Error: Request had insufficient authentication scopes.
+    at Gaxios._request (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_16cv388._.js:762:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async OAuth2Client.requestAsync (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_0swz9m6._.js:1392:20)
+    at async createAPIRequestAsync (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/[root-of-the-server]__1lor1in._.js:8334:25)
+    at async processEngineTick (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/[root-of-the-server]__0bg05wb._.js:650:33)
+    at async GET (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/[root-of-the-server]__0bg05wb._.js:892:13)
+    at async AppRouteRouteModule.do (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:40131)
+    at async AppRouteRouteModule.handle (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:5:47411)
+    at async responseGenerator (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_next_11kez_j._.js:16549:38)
+    at async AppRouteRouteModule.handleResponse (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/compiled/next-server/app-route-turbo.runtime.dev.js:1:228552)
+    at async handleResponse (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_next_11kez_j._.js:16612:32)
+    at async Module.handler (/Users/omgangwar/Documents/Projects/MailForge AI/.next/dev/server/chunks/1eu2_next_11kez_j._.js:16666:13)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:1462:9)
+    at async DevServer.renderPageComponent (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:1514:24)
+    at async DevServer.renderToResponseImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:1564:32)
+    at async DevServer.pipeImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:1044:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/next-server.js:338:17)
+    at async DevServer.handleRequestImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/base-server.js:935:17)
+    at async /Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/dev/next-dev-server.js:394:20
+    at async Span.traceAsyncFn (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/trace/trace.js:164:20)
+    at async DevServer.handleRequest (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/dev/next-dev-server.js:390:24)
+    at async invokeRender (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/lib/router-server.js:266:21)
+    at async handleRequest (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/lib/router-server.js:465:24)
+    at async requestHandlerImpl (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/lib/router-server.js:514:13)
+    at async Server.requestListener (/Users/omgangwar/Documents/Projects/MailForge AI/node_modules/next/dist/server/lib/start-server.js:225:13)
+12. Exact line where execution exits: catch block in engine.ts around line 270
+
+Google error code: 403
+Google error message: Request had insufficient authentication scopes.
+Google error reason: N/A
+Google response body: {"error":{"code":403,"message":"Request had insufficient authentication scopes.","errors":[{"message":"Insufficient Permission","domain":"global","reason":"insufficientPermissions"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_SCOPE_INSUFFICIENT","domain":"googleapis.com","metadata":{"service":"gmail.googleapis.com","method":"caribou.api.proto.MailboxService.SendMessage"}}]}}
+Google headers: {}
+========================
+
+FATAL DIAGNOSE ERROR: Request had insufficient authentication scopes.

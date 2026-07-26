@@ -60,11 +60,24 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
   const filteredLeads = useMemo(() => {
     if (!searchQuery) return leads;
     const term = searchQuery.toLowerCase();
-    return leads.filter(lead => 
-      `${lead.firstName} ${lead.lastName}`.toLowerCase().includes(term) ||
-      lead.email.toLowerCase().includes(term) ||
-      lead.company.toLowerCase().includes(term)
-    );
+    
+    return leads.filter(lead => {
+      try {
+        const first = typeof lead?.firstName === 'string' ? lead.firstName : "";
+        const last = typeof lead?.lastName === 'string' ? lead.lastName : "";
+        const email = typeof lead?.email === 'string' ? lead.email : "";
+        const company = typeof lead?.company === 'string' ? lead.company : "";
+
+        const fullName = `${first} ${last}`.trim();
+        
+        return fullName.toLowerCase().includes(term) ||
+          email.toLowerCase().includes(term) ||
+          company.toLowerCase().includes(term);
+      } catch (e) {
+        console.warn("Development Warning: Malformed lead in filter", lead, e);
+        return false;
+      }
+    });
   }, [leads, searchQuery]);
 
   const allSelected = filteredLeads.length > 0 && 
@@ -91,8 +104,23 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
     }
   };
 
-  const getInitials = (first: string, last: string) => {
-    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+  const getInitials = (lead: any) => {
+    try {
+      const first = typeof lead?.firstName === 'string' ? lead.firstName.trim() : "";
+      const last = typeof lead?.lastName === 'string' ? lead.lastName.trim() : "";
+      
+      if (first && last) return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+      if (first) return first.charAt(0).toUpperCase();
+      if (last) return last.charAt(0).toUpperCase();
+      
+      const company = typeof lead?.company === 'string' ? lead.company.trim() : "";
+      if (company) return company.charAt(0).toUpperCase();
+      
+      return "?";
+    } catch (e) {
+      console.warn("Development Warning: Malformed lead data in getInitials", lead, e);
+      return "?";
+    }
   };
 
   if (isLoading) {
@@ -182,21 +210,21 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
                       <div className="flex items-center gap-2">
                         <Avatar className="h-7 w-7">
                           <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                            {getInitials(lead.firstName, lead.lastName)}
+                            {getInitials(lead)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
-                          <span className="font-medium truncate max-w-[120px]" title={`${lead.firstName} ${lead.lastName}`}>
-                            {lead.firstName} {lead.lastName}
+                          <span className="font-medium truncate max-w-[120px]" title={`${lead?.firstName || ""} ${lead?.lastName || ""}`.trim()}>
+                            {`${lead?.firstName || ""} ${lead?.lastName || ""}`.trim() || "Unknown Contact"}
                           </span>
-                          <span className="text-[10px] text-muted-foreground truncate max-w-[120px]" title={lead.email}>
-                            {lead.email}
+                          <span className="text-[10px] text-muted-foreground truncate max-w-[120px]" title={typeof lead?.email === 'string' ? lead.email : ""}>
+                            {typeof lead?.email === 'string' ? lead.email : "No email"}
                           </span>
                         </div>
                       </div>
                     </td>
-                    <td className="py-2 px-2 truncate max-w-[100px] text-muted-foreground" title={lead.company}>
-                      {lead.company}
+                    <td className="py-2 px-2 truncate max-w-[100px] text-muted-foreground" title={typeof lead?.company === 'string' ? lead.company : ""}>
+                      {typeof lead?.company === 'string' && lead.company ? lead.company : "—"}
                     </td>
                     <td className="py-2 px-4 text-right">
                       <Badge variant="outline" className="text-[10px] h-5 py-0 px-1.5 rounded-sm bg-background font-normal">
