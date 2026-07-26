@@ -10,7 +10,7 @@ interface CampaignStatsProps {
 export function CampaignStats({ campaigns }: CampaignStatsProps) {
   const activeCampaigns = campaigns.filter(c => c.status === "Running" || c.status === "Scheduled").length;
   
-  const totalLeads = campaigns.reduce((acc, c) => acc + c.totalLeads, 0);
+  const totalLeads = campaigns.reduce((acc, c) => acc + (c.totalLeads ?? c.leadIds?.length ?? 0), 0);
   const emailsSent = campaigns.reduce((acc, c) => acc + c.emailsSent, 0);
   
   const totalDelivered = campaigns.reduce((acc, c) => acc + c.emailsDelivered, 0);

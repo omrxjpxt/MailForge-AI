@@ -30,8 +30,9 @@ export function CampaignCard({
   onArchive,
   onDelete
 }: CampaignCardProps) {
-  const percentage = campaign.totalLeads > 0 
-    ? Math.round((campaign.emailsSent / campaign.totalLeads) * 100) 
+  const safeTotalLeads = campaign.totalLeads ?? campaign.leadIds?.length ?? 0;
+  const percentage = safeTotalLeads > 0 
+    ? Math.round((campaign.emailsSent / safeTotalLeads) * 100)
     : 0;
 
   const openRate = campaign.emailsDelivered > 0 
@@ -138,7 +139,7 @@ export function CampaignCard({
 
         <div className="mt-auto pt-4 border-t border-border/30">
           <div className="flex justify-between items-center text-xs mb-2">
-            <span className="text-muted-foreground font-medium">{campaign.emailsSent} / {campaign.totalLeads} Emails Sent</span>
+            <span className="text-muted-foreground font-medium">{campaign.emailsSent} / {campaign.totalLeads ?? campaign.leadIds?.length ?? 0} Emails Sent</span>
             <span className="font-semibold">{percentage}%</span>
           </div>
           <Progress value={percentage} className={`h-1.5 ${isActive ? 'bg-primary/20' : 'bg-muted'}`} />

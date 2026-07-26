@@ -75,8 +75,12 @@ export function RecentCampaigns({ campaigns }: RecentCampaignsProps) {
                         {campaign.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right text-muted-foreground">{campaign.totalLeads.toLocaleString()}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{campaign.emailsSent > 0 ? ((campaign.opens / campaign.emailsSent) * 100).toFixed(1) + '%' : '0%'}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {(campaign.totalLeads ?? campaign.leadIds?.length ?? 0).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-right text-muted-foreground">
+                      {campaign.emailsSent > 0 ? ((campaign.opens / campaign.emailsSent) * 100).toFixed(1) + '%' : '0%'}
+                    </TableCell>
                     <TableCell className="text-right text-muted-foreground">{campaign.replies}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" asChild>

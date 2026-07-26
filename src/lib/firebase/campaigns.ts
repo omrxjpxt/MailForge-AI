@@ -140,7 +140,7 @@ export const duplicateCampaign = async (userId: string, campaign: Campaign): Pro
     dailyLimit,
     delayBetweenEmails,
     timezone,
-    totalLeads,
+    totalLeads: totalLeads ?? leadIds?.length ?? 0,
     status: "Draft",
     aiPersonalization: campaign.aiPersonalization,
     

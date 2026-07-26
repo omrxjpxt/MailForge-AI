@@ -69,7 +69,7 @@ export function ArchivedTable({ campaigns, onDelete, onUnarchive }: ArchivedTabl
                       {campaign.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{campaign.totalLeads}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{campaign.totalLeads ?? campaign.leadIds?.length ?? 0}</TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">{openRate}</TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">{replyRate}</TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground font-mono text-xs">

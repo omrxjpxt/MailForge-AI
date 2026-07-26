@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "campaignLeads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "nextExecutionAt", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "templates",
       "queryScope": "COLLECTION",
       "fields": [
