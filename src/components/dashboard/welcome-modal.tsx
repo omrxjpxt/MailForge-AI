@@ -34,7 +34,11 @@ export function WelcomeModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      if (onboarding.welcomeModalSeen) setIsOpen(open);
+      if (!open) {
+        handleGetStarted();
+      } else {
+        setIsOpen(open);
+      }
     }}>
       <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
         <div className="bg-primary/5 p-6 flex flex-col items-center justify-center text-center border-b border-border">
