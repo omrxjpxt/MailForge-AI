@@ -98,8 +98,8 @@ export default function SentPage() {
           <CardContent className="p-0 h-[400px]">
             <EmptyState
               icon={Mail}
-              title="No emails sent yet"
-              description="Launch a campaign to start sending emails. All sent emails will appear here in real-time."
+              title="Track your sent emails"
+              description="Once you launch a campaign, all emails sent to your leads will appear here. Track delivery status and replies in real-time."
               actionLabel="Launch Campaign"
               onAction={() => router.push("/campaigns/new")}
             />

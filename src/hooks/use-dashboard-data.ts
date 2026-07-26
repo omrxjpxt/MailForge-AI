@@ -28,6 +28,18 @@ export interface DashboardData {
   recentCampaigns: Campaign[];
   latestChanges: { id: string; title: string; time: string; type: "campaign" | "lead" | "template" | "history"; timestamp: number; color: string }[];
   performanceData: { name: string; sent: number; replies: number }[];
+  onboarding: {
+    hasSeenWelcome: boolean;
+    hasSeenCelebration: boolean;
+    isComplete: boolean;
+    steps: {
+      gmailConnected: boolean;
+      leadCreated: boolean;
+      templateCreated: boolean;
+      campaignCreated: boolean;
+      campaignLaunched: boolean;
+    };
+  };
 }
 
 export function useDashboardData(): DashboardData {
@@ -42,6 +54,7 @@ export function useDashboardData(): DashboardData {
   const [recentHistory, setRecentHistory] = useState<EmailHistory[]>([]);
   const [dailyLimit, setDailyLimit] = useState<number>(50); // Default to Free plan
   const [firstName, setFirstName] = useState("");
+  const [userDocData, setUserDocData] = useState<any>(null);
 
   useEffect(() => {
     if (!user) {
@@ -56,17 +69,24 @@ export function useDashboardData(): DashboardData {
         if (settingsDoc.exists()) {
           setDailyLimit(settingsDoc.data().dailyLimit || 50);
         }
-        
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setFirstName(userDoc.data().firstName || "");
-        }
       } catch (err) {
         console.error("Error fetching settings:", err);
       }
     };
 
     fetchSettings();
+
+    const unsubscribeUser = onSnapshot(
+      doc(db, "users", user.uid),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setFirstName(data.firstName || "");
+          setUserDocData(data);
+        }
+      },
+      (err) => setError(err)
+    );
 
     const unsubscribeCampaigns = onSnapshot(
       query(collection(db, "users", user.uid, "campaigns")),
@@ -107,6 +127,7 @@ export function useDashboardData(): DashboardData {
     );
 
     return () => {
+      unsubscribeUser();
       unsubscribeCampaigns();
       unsubscribeLeads();
       unsubscribeTemplates();
@@ -232,6 +253,20 @@ export function useDashboardData(): DashboardData {
     });
   }
 
+  // Derive Onboarding State
+  const onboarding = {
+    hasSeenWelcome: userDocData?.onboarding?.hasSeenWelcome || false,
+    hasSeenCelebration: userDocData?.onboarding?.hasSeenCelebration || false,
+    isComplete: userDocData?.onboarding?.isComplete || false,
+    steps: {
+      gmailConnected: userDocData?.gmailConnected || false,
+      leadCreated: leads.length > 0,
+      templateCreated: templates.length > 0,
+      campaignCreated: campaigns.length > 0,
+      campaignLaunched: campaigns.some(c => c.status === "Running" || c.status === "Completed" || c.status === "Paused"),
+    }
+  };
+
   return {
     isLoading,
     error,
@@ -253,5 +288,6 @@ export function useDashboardData(): DashboardData {
     recentCampaigns,
     latestChanges,
     performanceData,
+    onboarding,
   };
 }

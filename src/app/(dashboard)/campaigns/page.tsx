@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, Play } from "lucide-react";
+import { Plus, Loader2, Play, Rocket } from "lucide-react";
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
 import { CampaignCard } from "@/components/campaigns/campaign-card";
 import { ArchivedTable } from "@/components/campaigns/archived-table";
 import { CampaignStats } from "@/components/campaigns/campaign-stats";
@@ -191,11 +192,14 @@ export default function CampaignsPage() {
           
           <TabsContent value="active" className="mt-0">
             {activeCampaigns.length === 0 ? (
-              <div className="rounded-lg border border-border bg-card p-8 text-center">
-                <p className="text-muted-foreground">No active campaigns running right now.</p>
-                <Button variant="outline" className="mt-4" asChild>
-                  <Link href="/campaigns/new">Launch a new campaign</Link>
-                </Button>
+              <div className="rounded-lg border border-border bg-card p-0">
+                <EmptyState
+                  icon={Rocket}
+                  title="Launch your first campaign"
+                  description="Campaigns orchestrate sending emails to your leads using templates. Click below to start building."
+                  actionLabel="Create Campaign"
+                  onAction={() => window.location.href = "/campaigns/new"}
+                />
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

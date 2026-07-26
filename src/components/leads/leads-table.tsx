@@ -134,8 +134,8 @@ export function LeadsTable({
                 <TableCell colSpan={7} className="h-64 p-0">
                   <EmptyState 
                     icon={Users}
-                    title="No leads found"
-                    description="You haven't imported any leads yet, or none match your filters."
+                    title="Import your first lead"
+                    description="Leads are your prospects. Import them via CSV or add them manually to start building your outreach pipeline."
                   >
                     <div className="mt-4">
                       <CsvImportDialog existingLeads={leads} />

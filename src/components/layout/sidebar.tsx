@@ -15,6 +15,8 @@ import {
   Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -28,6 +30,19 @@ const navItems = [
 
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
+  const { onboarding } = useDashboardData();
+
+  const getNextStep = () => {
+    if (!onboarding || onboarding.isComplete) return null;
+    if (!onboarding.steps.gmailConnected) return "/settings";
+    if (!onboarding.steps.leadCreated) return "/leads";
+    if (!onboarding.steps.templateCreated) return "/templates";
+    if (!onboarding.steps.campaignCreated) return "/campaigns";
+    if (!onboarding.steps.campaignLaunched) return "/campaigns";
+    return null;
+  };
+
+  const nextStepHref = getNextStep();
 
   return (
     <div className={cn("flex h-full w-64 flex-col border-r border-border bg-sidebar text-sidebar-foreground", className)}>
@@ -55,21 +70,47 @@ export function Sidebar({ className }: { className?: string }) {
         <div className="flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
+            const isNextStep = nextStepHref === item.href;
+            
+            const linkContent = (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
+                  "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+                  isNextStep && !isActive && "text-primary hover:text-primary"
                 )}
               >
                 <item.icon className="h-4 w-4" />
                 {item.name}
+                {isNextStep && (
+                  <span className="absolute right-3 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                  </span>
+                )}
               </Link>
             );
+
+            if (isNextStep) {
+              return (
+                <TooltipProvider key={item.name}>
+                  <Tooltip defaultOpen={true}>
+                    <TooltipTrigger asChild>
+                      {linkContent}
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="bg-primary text-primary-foreground border-primary font-medium">
+                      Next Step
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            }
+
+            return linkContent;
           })}
         </div>
       </div>

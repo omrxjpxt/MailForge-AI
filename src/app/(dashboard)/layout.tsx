@@ -1,5 +1,7 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { WelcomeModal } from "@/components/dashboard/welcome-modal";
+import { Celebration } from "@/components/dashboard/celebration";
 
 export default function DashboardLayout({
   children,
@@ -16,6 +18,8 @@ export default function DashboardLayout({
         <main className="flex-1 overflow-y-auto bg-background/50">
           {children}
         </main>
+        <WelcomeModal />
+        <Celebration />
       </div>
     </div>
   );

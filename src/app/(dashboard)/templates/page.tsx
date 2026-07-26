@@ -165,9 +165,9 @@ export default function TemplatesPage() {
       {filteredTemplates.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 border border-dashed rounded-lg bg-card/50 text-center">
           <FileText className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-          <h3 className="text-lg font-medium">No templates found</h3>
+          <h3 className="text-lg font-medium">Create your first AI Template</h3>
           <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
-            {searchQuery ? "Try adjusting your search or filters to find what you're looking for." : "Create your first template to start sending faster, more consistent emails."}
+            {searchQuery ? "Try adjusting your search or filters to find what you're looking for." : "Templates are reusable email drafts. Use our AI to instantly generate high-converting outreach emails."}
           </p>
           {!searchQuery && (
             <Button onClick={handleCreate} variant="outline">

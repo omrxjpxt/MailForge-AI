@@ -7,6 +7,7 @@ import { LatestChanges } from "@/components/dashboard/recent-activity";
 import { RecentCampaigns } from "@/components/dashboard/recent-campaigns";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { Loader2 } from "lucide-react";
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
 
 export default function DashboardPage() {
   const { isLoading, metrics, performanceData, latestChanges, recentCampaigns, firstName } = useDashboardData();
@@ -35,6 +36,8 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Here&apos;s what is happening with your outreach today.</p>
       </div>
       
+      <OnboardingChecklist />
+
       <div className="grid gap-6">
         <div className="grid gap-6 grid-cols-1 xl:grid-cols-3">
           <div className="flex flex-col gap-6 xl:col-span-2">
