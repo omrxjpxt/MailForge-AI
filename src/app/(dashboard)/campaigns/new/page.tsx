@@ -190,6 +190,9 @@ export default function NewCampaignPage() {
 
     setIsSaving(true);
     try {
+      console.log(`[onSubmit] Total leads array size before createCampaign: ${campaignData.leadIds?.length}`);
+      console.log(`[onSubmit] Exact lead IDs being passed:`, campaignData.leadIds);
+      
       // Schedule immediately vs draft logic can be added here
       campaignData.totalLeads = campaignData.leadIds ? campaignData.leadIds.length : 0;
       campaignData.status = "Scheduled"; // Launching sets to scheduled/running

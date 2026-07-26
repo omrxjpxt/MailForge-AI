@@ -5,7 +5,9 @@ import {
   setDoc, 
   updateDoc, 
   deleteDoc, 
-  writeBatch
+  writeBatch,
+  getDocs,
+  query
 } from "firebase/firestore";
 import { Campaign, CampaignInput, ExecutionNode, CampaignLeadProgress } from "@/types/campaign";
 
@@ -49,14 +51,18 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
     console.error("Authenticated UID:", userId);
     throw e;
   }  
-  if ((campaign.status === "Scheduled" || campaign.status === "Running") && campaign.leadIds.length > 0) {
+  console.log(`[createCampaign] Received campaign.leadIds with length: ${campaign.leadIds?.length}`);
+  
+  if ((campaign.status === "Scheduled" || campaign.status === "Running") && campaign.leadIds && campaign.leadIds.length > 0) {
     // Initialize CampaignLeadProgress for every lead
     const batchSize = 400;
     for (let i = 0; i < campaign.leadIds.length; i += batchSize) {
       const batch = writeBatch(db);
       const chunk = campaign.leadIds.slice(i, i + batchSize);
       
+      console.log(`[createCampaign] Processing batch chunk with ${chunk.length} leads.`);
       chunk.forEach(leadId => {
+        console.log(`[createCampaign] Adding leadId to batch: ${leadId}`);
         const leadRef = doc(db, "users", userId, "campaigns", newDocRef.id, "campaignLeads", leadId);
         const progress: CampaignLeadProgress = {
           leadId,
@@ -74,9 +80,23 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
       });
       
       try {
+        console.log(`[createCampaign] About to commit batch with ${chunk.length} operations...`);
         await batch.commit();
-      } catch (e) {
-        console.error("FAILED BATCH WRITE in createCampaign.");
+        console.log("[createCampaign] Batch committed successfully");
+        
+        // Immediately query the subcollection to verify writes
+        const leadsQuery = query(collection(db, "users", userId, "campaigns", newDocRef.id, "campaignLeads"));
+        const leadsSnapshot = await getDocs(leadsQuery);
+        console.log(`[createCampaign] VERIFICATION: Queried campaignLeads subcollection immediately after commit.`);
+        console.log(`[createCampaign] VERIFICATION: Found ${leadsSnapshot.docs.length} documents.`);
+        console.log(`[createCampaign] VERIFICATION: Document IDs:`, leadsSnapshot.docs.map(d => d.id));
+        
+      } catch (e: unknown) {
+        console.error("[createCampaign] FAILED BATCH WRITE in createCampaign.");
+        console.error("[createCampaign] Complete FirebaseError:", e);
+        if (e instanceof Error) {
+          console.error("[createCampaign] Stack trace:", e.stack);
+        }
         chunk.forEach(leadId => {
           console.error("FAILED WRITE PATH:", `users/${userId}/campaigns/${newDocRef.id}/campaignLeads/${leadId}`);
         });

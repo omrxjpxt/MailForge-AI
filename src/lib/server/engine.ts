@@ -9,16 +9,21 @@ import { generateAIEmailVariation } from "./ai-generator";
  * Main Engine tick for a user.
  */
 export async function processEngineTick(uid: string) {
+  console.log(`[Engine] Tick started for user: ${uid}`);
   const campaignsSnap = await adminDb
     .collection(`users/${uid}/campaigns`)
     .where("status", "==", "Running")
     .get();
 
+  console.log(`[Engine] Found ${campaignsSnap.size} running campaigns for user ${uid}`);
   if (campaignsSnap.empty) return;
 
   const userDoc = await adminDb.collection("users").doc(uid).get();
   const userData = userDoc.data();
-  if (!userData?.gmailRefreshToken) return; // Cannot send emails without Gmail
+  if (!userData?.gmailRefreshToken) {
+    console.log(`[Engine] Skipping user ${uid}: No gmailRefreshToken found`);
+    return; // Cannot send emails without Gmail
+  }
 
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -30,6 +35,7 @@ export async function processEngineTick(uid: string) {
 
   for (const campDoc of campaignsSnap.docs) {
     const campaign = campDoc.data() as Campaign;
+    console.log(`[Engine] Processing campaign ${campDoc.id} (status: ${campaign.status})`);
     
     // Check daily limits
     const today = new Date().toISOString().split("T")[0];
@@ -42,6 +48,7 @@ export async function processEngineTick(uid: string) {
     }
 
     if (campaign.dailyEmailsSent >= campaign.dailyLimit) {
+      console.log(`[Engine] Skipping campaign ${campDoc.id}: Daily limit reached (${campaign.dailyEmailsSent}/${campaign.dailyLimit})`);
       continue; // Skip queuing/sending for this campaign today
     }
 
@@ -52,6 +59,12 @@ export async function processEngineTick(uid: string) {
       .where("nextExecutionAt", "<=", Date.now())
       .limit(50) // Process up to 50 leads per tick to avoid timeouts
       .get();
+      
+    console.log(`[Engine] Found ${leadsSnap.size} eligible campaignLeads for campaign ${campDoc.id} (status=Running, nextExecutionAt <= now)`);
+    
+    // Check if the collection actually exists by performing an un-filtered query
+    const allLeadsSnap = await adminDb.collection(`users/${uid}/campaigns/${campDoc.id}/campaignLeads`).limit(1).get();
+    console.log(`[Engine] Diagnostic: Is campaignLeads subcollection completely empty? ${allLeadsSnap.empty ? "YES" : "NO"}`);
 
     for (const leadProgressDoc of leadsSnap.docs) {
       const progress = leadProgressDoc.data() as CampaignLeadProgress;
