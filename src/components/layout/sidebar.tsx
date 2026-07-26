@@ -32,7 +32,7 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col border-r border-border bg-sidebar text-sidebar-foreground">
       {/* Logo Area */}
-      <div className="flex h-16 items-center px-6 border-b border-border/50">
+      <Link href="/dashboard" className="flex h-16 items-center px-6 border-b border-border/50 hover:bg-sidebar-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
         <div className="flex items-center gap-2 font-semibold">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Rocket className="h-5 w-5" />
@@ -42,7 +42,7 @@ export function Sidebar() {
             <span className="text-xs text-muted-foreground mt-1">Pro Workspace</span>
           </div>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <div className="flex-1 overflow-auto py-4 flex flex-col gap-1 px-3">

@@ -16,6 +16,7 @@ import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { GlobalSearch } from "./global-search";
+import { NotificationDropdown } from "./notification-dropdown";
 
 export function Topbar() {
   const router = useRouter();
@@ -56,10 +57,7 @@ export function Topbar() {
           </div>
         )}
 
-        <Button variant="ghost" size="icon" className="relative text-muted-foreground">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-2 h-1.5 w-1.5 rounded-full bg-primary"></span>
-        </Button>
+        <NotificationDropdown />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

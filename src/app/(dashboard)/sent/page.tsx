@@ -11,6 +11,8 @@ import { useAuth } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/client";
 import { collection, query, orderBy, onSnapshot, limit } from "firebase/firestore";
 import { EmailHistory } from "@/types/history";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useRouter } from "next/navigation";
 
 function timeAgo(timestamp: number): string {
   const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -29,6 +31,7 @@ export default function SentPage() {
   const [emails, setEmails] = useState<EmailHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -92,16 +95,14 @@ export default function SentPage() {
 
       {emails.length === 0 ? (
         <Card className="bg-card">
-          <CardContent className="p-0">
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Mail className="h-6 w-6 text-primary" />
-              </div>
-              <h3 className="font-semibold text-lg mb-2">No emails sent yet</h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Launch a campaign to start sending emails. All sent emails will appear here in real-time.
-              </p>
-            </div>
+          <CardContent className="p-0 h-[400px]">
+            <EmptyState
+              icon={Mail}
+              title="No emails sent yet"
+              description="Launch a campaign to start sending emails. All sent emails will appear here in real-time."
+              actionLabel="Launch Campaign"
+              onAction={() => router.push("/campaigns/new")}
+            />
           </CardContent>
         </Card>
       ) : (

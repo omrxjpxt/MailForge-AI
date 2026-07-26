@@ -12,6 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface ArchivedTableProps {
   campaigns: Campaign[];
@@ -45,8 +46,12 @@ export function ArchivedTable({ campaigns, onDelete, onUnarchive }: ArchivedTabl
         <TableBody>
           {archivedCampaigns.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                No archived campaigns.
+              <TableCell colSpan={7} className="h-48 p-0">
+                <EmptyState
+                  icon={Trash2}
+                  title="No archived campaigns"
+                  description="Archived campaigns will appear here."
+                />
               </TableCell>
             </TableRow>
           ) : (

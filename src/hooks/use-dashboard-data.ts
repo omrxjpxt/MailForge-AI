@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/firebase/auth";
 import { Campaign } from "@/types/campaign";
 import { Lead } from "@/types/lead";
 import { EmailHistory } from "@/types/history";
+import { EmailTemplate } from "@/types/template";
 
 export interface DashboardData {
   isLoading: boolean;
@@ -25,7 +26,7 @@ export interface DashboardData {
     totalReplied: number;
   };
   recentCampaigns: Campaign[];
-  latestChanges: { id: string; title: string; time: string; type: "campaign" | "lead"; timestamp: number; color: string }[];
+  latestChanges: { id: string; title: string; time: string; type: "campaign" | "lead" | "template" | "history"; timestamp: number; color: string }[];
   performanceData: { name: string; sent: number; replies: number }[];
 }
 
@@ -37,6 +38,7 @@ export function useDashboardData(): DashboardData {
   
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [recentHistory, setRecentHistory] = useState<EmailHistory[]>([]);
   const [dailyLimit, setDailyLimit] = useState<number>(50); // Default to Free plan
   const [firstName, setFirstName] = useState("");
@@ -84,6 +86,15 @@ export function useDashboardData(): DashboardData {
       (err) => setError(err)
     );
     
+    const unsubscribeTemplates = onSnapshot(
+      query(collection(db, "users", user.uid, "templates")),
+      (snapshot) => {
+        const tmpls = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EmailTemplate));
+        setTemplates(tmpls);
+      },
+      (err) => setError(err)
+    );
+    
     // Fetch last 7 days of email history for the chart
     const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
     const unsubscribeHistory = onSnapshot(
@@ -98,17 +109,18 @@ export function useDashboardData(): DashboardData {
     return () => {
       unsubscribeCampaigns();
       unsubscribeLeads();
+      unsubscribeTemplates();
       unsubscribeHistory();
     };
   }, [user]);
 
   useEffect(() => {
-    if (user && campaigns && leads) {
+    if (user && campaigns && leads && templates && recentHistory) {
       // Data is mostly loaded when we have the snapshot, even if empty.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoading(false);
     }
-  }, [user, campaigns, leads]);
+  }, [user, campaigns, leads, templates, recentHistory]);
 
   // Derived Metrics
   const todayDateString = new Date().toISOString().split("T")[0];
@@ -149,12 +161,13 @@ export function useDashboardData(): DashboardData {
     .slice(0, 5);
 
   // Latest Changes
-  const latestChangesRaw: { id: string; title: string; time: string; type: "campaign" | "lead"; timestamp: number; color: string; }[] = [];
+  const latestChangesRaw: { id: string; title: string; time: string; type: "campaign" | "lead" | "template" | "history"; timestamp: number; color: string; }[] = [];
   
   campaigns.forEach(camp => {
+    const statusText = camp.status === "Running" ? "started" : camp.status === "Paused" ? "paused" : camp.status === "Completed" ? "completed" : "created/updated";
     latestChangesRaw.push({
       id: `camp-${camp.id}`,
-      title: `Campaign "${camp.name}" updated`,
+      title: `Campaign "${camp.name}" ${statusText}`,
       time: new Date(camp.updatedAt).toLocaleString(),
       timestamp: camp.updatedAt,
       type: "campaign",
@@ -171,6 +184,30 @@ export function useDashboardData(): DashboardData {
       type: "lead",
       color: "bg-green-500"
     });
+  });
+
+  templates.forEach(tmpl => {
+    latestChangesRaw.push({
+      id: `tmpl-${tmpl.id}`,
+      title: tmpl.isAI ? `AI Template "${tmpl.name}" generated` : `Template "${tmpl.name}" created`,
+      time: new Date(tmpl.updatedAt).toLocaleString(),
+      timestamp: tmpl.updatedAt,
+      type: "template",
+      color: "bg-purple-500"
+    });
+  });
+  
+  recentHistory.forEach(hist => {
+    if (hist.status === "Sent" || hist.status === "Replied") {
+      latestChangesRaw.push({
+        id: `hist-${hist.id}`,
+        title: hist.status === "Sent" ? `Email sent to ${hist.toEmail}` : `Reply received from ${hist.toEmail}`,
+        time: new Date(hist.sentAt).toLocaleString(),
+        timestamp: hist.sentAt,
+        type: "history",
+        color: hist.status === "Replied" ? "bg-amber-500" : "bg-gray-400"
+      });
+    }
   });
 
   const latestChanges = latestChangesRaw

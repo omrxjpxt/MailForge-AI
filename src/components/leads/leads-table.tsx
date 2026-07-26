@@ -24,6 +24,9 @@ import {
 import { Lead } from "@/types/lead";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CsvImportDialog } from "@/components/leads/csv-import-dialog";
+import { Users } from "lucide-react";
 
 interface LeadsTableProps {
   leads: Lead[];
@@ -126,10 +129,18 @@ export function LeadsTable({
                   Loading leads...
                 </TableCell>
               </TableRow>
-            ) : leads.length === 0 ? (
+            ) : leads.length === 0 && !isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                  No leads found.
+                <TableCell colSpan={7} className="h-64 p-0">
+                  <EmptyState 
+                    icon={Users}
+                    title="No leads found"
+                    description="You haven't imported any leads yet, or none match your filters."
+                  >
+                    <div className="mt-4">
+                      <CsvImportDialog existingLeads={leads} />
+                    </div>
+                  </EmptyState>
                 </TableCell>
               </TableRow>
             ) : (

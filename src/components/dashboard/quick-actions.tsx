@@ -20,13 +20,13 @@ export function QuickActions() {
             </Link>
           </Button>
           <Button variant="outline" className="flex h-20 flex-col items-center justify-center gap-2 border-border/50 bg-background hover:bg-muted/50 hover:border-primary/50 transition-colors" asChild>
-            <a href="/api/gmail/auth">
+            <Link href="/settings?tab=integrations">
               <Mail className="h-5 w-5 text-muted-foreground" />
               <span className="text-xs text-center leading-tight">Connect<br/>Gmail</span>
-            </a>
+            </Link>
           </Button>
           <Button variant="outline" className="flex h-20 flex-col items-center justify-center gap-2 border-border/50 bg-background hover:bg-muted/50 hover:border-primary/50 transition-colors" asChild>
-            <Link href="/campaigns">
+            <Link href="/templates">
               <Sparkles className="h-5 w-5 text-muted-foreground" />
               <span className="text-xs text-center leading-tight">Generate<br/>Copy</span>
             </Link>
