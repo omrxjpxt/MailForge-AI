@@ -38,9 +38,15 @@ export function Celebration() {
       setTimeout(() => setHasFired(true), 0);
 
       // Write to Firestore so it doesn't fire again
-      setDoc(doc(db, "users", user.uid), {
-        onboarding: { hasSeenCelebration: true }
-      }, { merge: true }).catch(console.error);
+      try {
+        const docRef = doc(db, "users", user.uid);
+        setDoc(docRef, {
+          onboarding: { hasSeenCelebration: true }
+        }, { merge: true });
+      } catch (e) {
+        console.error("FAILED WRITE:", `users/${user.uid}`, { onboarding: { hasSeenCelebration: true } }, e);
+        console.error("Authenticated UID:", user.uid);
+      }
     }
   }, [isLoading, onboarding.steps.campaignLaunched, onboarding.hasSeenCelebration, user, hasFired]);
 

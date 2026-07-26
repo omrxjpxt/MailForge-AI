@@ -42,8 +42,13 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
     updatedAt: Date.now(),
   };
 
-  await setDoc(newDocRef, campaign);
-  
+  try {
+    await setDoc(newDocRef, campaign);
+  } catch (e) {
+    console.error("FAILED WRITE during createCampaign:", newDocRef.path, campaign, e);
+    console.error("Authenticated UID:", userId);
+    throw e;
+  }  
   if ((campaign.status === "Scheduled" || campaign.status === "Running") && campaign.leadIds.length > 0) {
     // Initialize CampaignLeadProgress for every lead
     const batchSize = 400;
@@ -68,7 +73,16 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
         batch.set(leadRef, progress);
       });
       
-      await batch.commit();
+      try {
+        await batch.commit();
+      } catch (e) {
+        console.error("FAILED BATCH WRITE in createCampaign.");
+        chunk.forEach(leadId => {
+          console.error("FAILED WRITE PATH:", `users/${userId}/campaigns/${newDocRef.id}/campaignLeads/${leadId}`);
+        });
+        console.error("Authenticated UID:", userId);
+        throw e;
+      }
     }
   }
   
@@ -77,10 +91,16 @@ export const createCampaign = async (userId: string, data: CampaignInput): Promi
 
 export const updateCampaign = async (userId: string, campaignId: string, data: Partial<CampaignInput>): Promise<void> => {
   const campaignRef = doc(db, "users", userId, "campaigns", campaignId);
-  await updateDoc(campaignRef, {
-    ...data,
-    updatedAt: Date.now(),
-  });
+  try {
+    await updateDoc(campaignRef, {
+      ...data,
+      updatedAt: Date.now(),
+    });
+  } catch (e) {
+    console.error("FAILED WRITE:", campaignRef.path, { ...data, updatedAt: Date.now() }, e);
+    console.error("Authenticated UID:", userId);
+    throw e;
+  }
 };
 
 export const deleteCampaign = async (userId: string, campaignId: string): Promise<void> => {
@@ -133,10 +153,16 @@ export const duplicateCampaign = async (userId: string, campaign: Campaign): Pro
 
 export const launchCampaign = async (userId: string, campaignId: string): Promise<void> => {
   // Sets the campaign to Running or Scheduled depending on scheduledAt
-  await updateCampaign(userId, campaignId, {
-    status: "Running",
-    startedAt: Date.now()
-  });
+  try {
+    await updateCampaign(userId, campaignId, {
+      status: "Running",
+      startedAt: Date.now()
+    });
+  } catch (e) {
+    console.error("FAILED WRITE during launchCampaign:", `users/${userId}/campaigns/${campaignId}`, e);
+    console.error("Authenticated UID:", userId);
+    throw e;
+  }
 };
 
 export const pauseCampaign = async (userId: string, campaignId: string): Promise<void> => {
