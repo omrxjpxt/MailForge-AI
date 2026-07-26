@@ -47,6 +47,11 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
       if (onHasLeadsChange) {
         onHasLeadsChange(newLeads.length > 0);
       }
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+        console.error("Lead selector snapshot error:", error);
+      }
+      setIsLoading(false);
     });
 
     return () => unsubscribe();

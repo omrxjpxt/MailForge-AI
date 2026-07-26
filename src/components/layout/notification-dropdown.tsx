@@ -60,6 +60,10 @@ export function NotificationDropdown() {
       } else {
         setNotifications(notifs);
       }
+    }, (error) => {
+      if (error.code !== 'permission-denied') {
+        console.error("Notifications snapshot error:", error);
+      }
     });
 
     return () => unsubscribe();
