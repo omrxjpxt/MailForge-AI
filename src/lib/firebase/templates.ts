@@ -19,6 +19,8 @@ export const createTemplate = async (userId: string, data: TemplateInput): Promi
   const template: Omit<EmailTemplate, "id"> = {
     ...data,
     userId,
+    isArchived: data.isArchived ?? false,
+    favorite: data.favorite ?? false,
     usageCount: 0,
     replyCount: 0,
     openCount: 0,

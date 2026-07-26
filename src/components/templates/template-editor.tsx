@@ -46,6 +46,8 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
     body: "",
     tags: [],
     isAI: false,
+    isArchived: false,
+    favorite: false,
   });
   
   const [currentTag, setCurrentTag] = useState("");
@@ -87,6 +89,8 @@ export function TemplateEditor({ isOpen, onClose, template }: TemplateEditorProp
         body: "",
         tags: [],
         isAI: false,
+        isArchived: false,
+        favorite: false,
       });
       setShowAIPrompt(false);
       setAiPrompt("");
