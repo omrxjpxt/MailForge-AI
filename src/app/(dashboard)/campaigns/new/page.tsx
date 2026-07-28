@@ -499,16 +499,16 @@ export default function NewCampaignPage() {
       {step === 3 && (
         <Card className="bg-card">
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="shrink-0">
                 <CardTitle>Email Sequence</CardTitle>
                 <CardDescription>Write your emails, use templates, or let AI generate them.</CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1 w-full sm:w-auto min-w-0 justify-end">
                 {templates.length === 0 && !isTemplatesLoading ? (
-                  <div className="flex flex-col items-start gap-1">
+                  <div className="flex flex-col items-end gap-1 flex-1 min-w-0 max-w-[400px]">
                     <Select disabled>
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-full flex-1">
                         <SelectValue placeholder="No templates available" />
                       </SelectTrigger>
                     </Select>
@@ -518,12 +518,12 @@ export default function NewCampaignPage() {
                   </div>
                 ) : (
                   <Select disabled={isTemplatesLoading} onValueChange={handleTemplateSelect}>
-                    <SelectTrigger className="w-[220px]">
+                    <SelectTrigger className="flex-1 w-full min-w-[200px] max-w-[400px]">
                       <SelectValue placeholder="Use Template...">
                         {(value: string | null) => {
-                          if (!value) return null;
+                          if (!value) return <span className="text-muted-foreground font-normal">Use Template...</span>;
                           const found = templates.find(t => t.id === value);
-                          return found ? found.name : "Use Template...";
+                          return found ? found.name : <span className="text-muted-foreground font-normal">Use Template...</span>;
                         }}
                       </SelectValue>
                     </SelectTrigger>
