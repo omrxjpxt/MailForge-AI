@@ -48,7 +48,7 @@ export function Celebration() {
         console.error("Authenticated UID:", user.uid);
       }
     }
-  }, [isLoading, onboarding.steps.campaignLaunched, onboarding.hasSeenCelebration, user, hasFired]);
+  }, [isLoading, onboarding.steps?.campaignLaunched, onboarding.hasSeenCelebration, user, hasFired]);
 
   return null;
 }

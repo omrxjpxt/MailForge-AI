@@ -69,8 +69,18 @@ export function LeadsTable({
   
   const allSelected = leads.length > 0 && selectedLeadIds.size === leads.length;
   
-  const getInitials = (first: string, last: string) => {
-    return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+  const getInitials = (first?: string | null, last?: string | null) => {
+    const safeFirst = (first || "").trim();
+    const safeLast = (last || "").trim();
+    
+    if (safeFirst && safeLast) {
+      return `${safeFirst.charAt(0)}${safeLast.charAt(0)}`.toUpperCase();
+    } else if (safeFirst) {
+      return safeFirst.charAt(0).toUpperCase();
+    } else if (safeLast) {
+      return safeLast.charAt(0).toUpperCase();
+    }
+    return "?";
   };
 
   const getStatusColor = (status: string) => {
@@ -146,6 +156,13 @@ export function LeadsTable({
             ) : (
               leads.map((lead) => {
                 const isSelected = selectedLeadIds.has(lead.id);
+                const safeFirstName = (lead.firstName || "").trim();
+                const safeLastName = (lead.lastName || "").trim();
+                const displayName = safeFirstName || safeLastName ? `${safeFirstName} ${safeLastName}`.trim() : "Unknown";
+                const displayEmail = (lead.email || "").trim() || "No email";
+                const displayCompany = (lead.company || "").trim() || "—";
+                const displayIndustry = (lead.industry || "").trim() || "—";
+
                 return (
                   <TableRow key={lead.id} className={`border-border/50 group ${isSelected ? 'bg-muted/50' : ''}`}>
                     <TableCell className="text-center">
@@ -162,21 +179,21 @@ export function LeadsTable({
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col max-w-[180px]">
-                          <span className="font-semibold truncate" title={`${lead.firstName} ${lead.lastName}`}>
-                            {lead.firstName} {lead.lastName}
+                          <span className="font-semibold truncate" title={displayName}>
+                            {displayName}
                           </span>
-                          <span className="text-xs text-muted-foreground truncate" title={lead.email}>
-                            {lead.email}
+                          <span className="text-xs text-muted-foreground truncate" title={displayEmail}>
+                            {displayEmail}
                           </span>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground truncate max-w-[150px]" title={lead.company}>
-                      {lead.company}
+                    <TableCell className="text-muted-foreground truncate max-w-[150px]" title={displayCompany}>
+                      {displayCompany}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="bg-muted text-[10px] font-semibold tracking-wider text-muted-foreground uppercase rounded-sm border-border/50 truncate max-w-[120px]">
-                        {lead.industry}
+                        {displayIndustry}
                       </Badge>
                     </TableCell>
                     <TableCell>

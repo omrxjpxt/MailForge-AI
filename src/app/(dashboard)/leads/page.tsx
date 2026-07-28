@@ -132,9 +132,9 @@ function LeadsPageContent() {
       // Search
       if (searchQuery) {
         const term = searchQuery.toLowerCase();
-        const matchName = `${lead.firstName} ${lead.lastName}`.toLowerCase().includes(term);
-        const matchEmail = lead.email.toLowerCase().includes(term);
-        const matchCompany = lead.company.toLowerCase().includes(term);
+        const matchName = `${lead.firstName || ""} ${lead.lastName || ""}`.toLowerCase().includes(term);
+        const matchEmail = (lead.email || "").toLowerCase().includes(term);
+        const matchCompany = (lead.company || "").toLowerCase().includes(term);
         if (!matchName && !matchEmail && !matchCompany) return false;
       }
       
@@ -144,8 +144,8 @@ function LeadsPageContent() {
         // In a real app with freeform industry text, you'd probably lowercase match or normalize
         if (industryFilter === "Other") {
           const known = ["SaaS", "Fintech", "Healthcare", "E-commerce"];
-          if (known.includes(lead.industry)) return false;
-        } else if (lead.industry.toLowerCase() !== industryFilter.toLowerCase()) {
+          if (known.includes(lead.industry || "")) return false;
+        } else if ((lead.industry || "").toLowerCase() !== industryFilter.toLowerCase()) {
           return false;
         }
       }

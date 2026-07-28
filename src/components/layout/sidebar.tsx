@@ -34,11 +34,11 @@ export function Sidebar({ className }: { className?: string }) {
 
   const getNextStep = () => {
     if (!onboarding || onboarding.isComplete) return null;
-    if (!onboarding.steps.gmailConnected) return "/settings";
-    if (!onboarding.steps.leadCreated) return "/leads";
-    if (!onboarding.steps.templateCreated) return "/templates";
-    if (!onboarding.steps.campaignCreated) return "/campaigns";
-    if (!onboarding.steps.campaignLaunched) return "/campaigns";
+    if (!onboarding.steps?.gmailConnected) return "/settings";
+    if (!onboarding.steps?.leadCreated) return "/leads";
+    if (!onboarding.steps?.templateCreated) return "/templates";
+    if (!onboarding.steps?.campaignCreated) return "/campaigns";
+    if (!onboarding.steps?.campaignLaunched) return "/campaigns";
     return null;
   };
 
