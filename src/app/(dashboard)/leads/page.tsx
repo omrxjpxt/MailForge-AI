@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { LeadFilters } from "@/components/leads/lead-filters";
 import { LeadsTable } from "@/components/leads/leads-table";
 import { LeadDialog } from "@/components/leads/lead-dialog";
@@ -48,6 +48,7 @@ function LeadsPageContent() {
   const [bulkStatus, setBulkStatus] = useState<string>("");
   const [isBulkLoading, setIsBulkLoading] = useState(false);
   const confirm = useConfirm();
+  const lastSelectedIdRef = React.useRef<string | null>(null);
 
   // Dialog states
   const [isLeadDialogOpen, setIsLeadDialogOpen] = useState(false);
@@ -163,11 +164,29 @@ function LeadsPageContent() {
   const handleNextPage = () => setPageIndex(p => p + 1);
   const handlePrevPage = () => setPageIndex(p => Math.max(0, p - 1));
 
-  const handleSelectLead = (id: string, selected: boolean) => {
+  const handleSelectLead = (id: string, selected: boolean, shiftKey?: boolean) => {
     const next = new Set(selectedLeadIds);
+    
+    if (shiftKey && lastSelectedIdRef.current && selected) {
+      // Range select: find the range between lastSelected and current
+      const lastIdx = filteredLeads.findIndex(l => l.id === lastSelectedIdRef.current);
+      const currIdx = filteredLeads.findIndex(l => l.id === id);
+      if (lastIdx !== -1 && currIdx !== -1) {
+        const [from, to] = lastIdx < currIdx ? [lastIdx, currIdx] : [currIdx, lastIdx];
+        for (let i = from; i <= to; i++) {
+          next.add(filteredLeads[i].id);
+        }
+        setSelectedLeadIds(next);
+        lastSelectedIdRef.current = id;
+        return;
+      }
+    }
+    
     if (selected) next.add(id);
     else next.delete(id);
     setSelectedLeadIds(next);
+    if (selected) lastSelectedIdRef.current = id;
+    else if (lastSelectedIdRef.current === id) lastSelectedIdRef.current = null;
   };
 
   const handleSelectAll = (selected: boolean) => {

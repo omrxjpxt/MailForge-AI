@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useCallback, KeyboardEvent } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -32,7 +33,7 @@ interface LeadsTableProps {
   leads: Lead[];
   isLoading: boolean;
   selectedLeadIds: Set<string>;
-  onSelectLead: (id: string, selected: boolean) => void;
+  onSelectLead: (id: string, selected: boolean, shiftKey?: boolean) => void;
   onSelectAll: (selected: boolean) => void;
   onEdit: (lead: Lead) => void;
   onDuplicate: (lead: Lead) => void;
@@ -46,6 +47,32 @@ interface LeadsTableProps {
   onPrevPage: () => void;
   pageIndex: number; // 0-based
   pageSize: number;
+}
+
+// Tags that, when clicked, should NOT toggle row selection
+const INTERACTIVE_TAGS = new Set(["BUTTON", "A", "INPUT", "SELECT", "TEXTAREA", "LABEL"]);
+
+// Interactive data-slot attributes from our component library
+const INTERACTIVE_SLOTS = new Set([
+  "checkbox",
+  "dropdown-menu-trigger",
+  "dropdown-menu-content",
+  "dropdown-menu-item",
+]);
+
+/** Returns true if the click target is an interactive element that should suppress row selection */
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  let el = target as HTMLElement | null;
+  while (el && el !== document.body) {
+    if (INTERACTIVE_TAGS.has(el.tagName)) return true;
+    const slot = el.getAttribute("data-slot");
+    if (slot && INTERACTIVE_SLOTS.has(slot)) return true;
+    // Radix / Base UI portals
+    if (el.getAttribute("role") === "menu") return true;
+    if (el.getAttribute("role") === "menuitem") return true;
+    el = el.parentElement;
+  }
+  return false;
 }
 
 export function LeadsTable({ 
@@ -163,18 +190,47 @@ export function LeadsTable({
                 const displayCompany = (lead.company || "").trim() || "—";
                 const displayIndustry = (lead.industry || "").trim() || "—";
 
+                const handleRowClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
+                  if (isInteractiveTarget(e.target)) return;
+                  onSelectLead(lead.id, !isSelected, e.shiftKey);
+                };
+
+                const handleRowKeyDown = (e: KeyboardEvent<HTMLTableRowElement>) => {
+                  if (e.key === " " && !isInteractiveTarget(e.target as EventTarget)) {
+                    e.preventDefault();
+                    onSelectLead(lead.id, !isSelected);
+                  }
+                };
+
                 return (
-                  <TableRow key={lead.id} className={`border-border/50 group ${isSelected ? 'bg-muted/50' : ''}`}>
-                    <TableCell className="text-center">
+                  <TableRow
+                    key={lead.id}
+                    onClick={handleRowClick}
+                    onKeyDown={handleRowKeyDown}
+                    tabIndex={0}
+                    role="row"
+                    aria-selected={isSelected}
+                    className={[
+                      "border-border/50 group cursor-pointer outline-none",
+                      "transition-colors duration-150",
+                      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50",
+                      isSelected
+                        ? "bg-primary/10 hover:bg-primary/[0.15] border-l-2 border-l-primary"
+                        : "hover:bg-muted/40",
+                    ].join(" ")}
+                  >
+                    <TableCell className="text-center" onClick={e => e.stopPropagation()}>
                       <Checkbox 
                         checked={isSelected} 
                         onCheckedChange={(c) => onSelectLead(lead.id, !!c)} 
+                        aria-label={`Select ${displayName}`}
+                        tabIndex={-1}
                       />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9 border-2 border-background">
-                          <AvatarFallback className="text-white text-xs bg-primary/80">
+                        <Avatar className={`h-9 w-9 border-2 transition-colors duration-150 ${isSelected ? "border-primary/30" : "border-background"}`}>
+                          <AvatarFallback className={`text-xs transition-colors duration-150 ${isSelected ? "bg-primary/70 text-primary-foreground" : "text-white bg-primary/100"}`}>
                             {getInitials(lead.firstName, lead.lastName)}
                           </AvatarFallback>
                         </Avatar>
@@ -208,7 +264,7 @@ export function LeadsTable({
                     <TableCell className="text-xs text-muted-foreground">
                       {format(lead.createdAt, "MMM d, yyyy")}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 data-[state=open]:opacity-100">

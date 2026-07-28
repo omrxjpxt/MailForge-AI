@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/client";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
@@ -96,11 +96,27 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
     }
   };
 
-  const handleSelectOne = (id: string, checked: boolean) => {
+  const lastSelectedIdRef = useRef<string | null>(null);
+
+  const handleSelectOne = (id: string, checked: boolean, shiftKey?: boolean) => {
+    if (shiftKey && lastSelectedIdRef.current && checked) {
+      const lastIdx = filteredLeads.findIndex(l => l.id === lastSelectedIdRef.current);
+      const currIdx = filteredLeads.findIndex(l => l.id === id);
+      if (lastIdx !== -1 && currIdx !== -1) {
+        const [from, to] = lastIdx < currIdx ? [lastIdx, currIdx] : [currIdx, lastIdx];
+        const rangeIds = filteredLeads.slice(from, to + 1).map(l => l.id);
+        const merged = Array.from(new Set([...selectedLeadIds, ...rangeIds]));
+        onChange(merged);
+        lastSelectedIdRef.current = id;
+        return;
+      }
+    }
     if (checked) {
       onChange([...selectedLeadIds, id]);
+      lastSelectedIdRef.current = id;
     } else {
       onChange(selectedLeadIds.filter(selectedId => selectedId !== id));
+      if (lastSelectedIdRef.current === id) lastSelectedIdRef.current = null;
     }
   };
 
@@ -198,12 +214,45 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
-                {filteredLeads.map(lead => (
-                  <tr key={lead.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="py-2 pl-4 pr-2 text-center">
+                {filteredLeads.map(lead => {
+                  const isLeadSelected = selectedLeadIds.includes(lead.id);
+
+                  const handleRowClick = (e: React.MouseEvent<HTMLTableRowElement>) => {
+                    const target = e.target as HTMLElement;
+                    // Stop if clicking on button, input, checkbox, or link
+                    let el: HTMLElement | null = target;
+                    while (el && el.tagName !== 'TR') {
+                      if (['BUTTON', 'INPUT', 'A', 'SELECT', 'TEXTAREA'].includes(el.tagName)) return;
+                      if (el.getAttribute('data-slot') === 'checkbox') return;
+                      if (el.getAttribute('role') === 'checkbox') return;
+                      el = el.parentElement;
+                    }
+                    handleSelectOne(lead.id, !isLeadSelected, e.shiftKey);
+                  };
+
+                  return (
+                  <tr
+                    key={lead.id}
+                    onClick={handleRowClick}
+                    tabIndex={0}
+                    role="row"
+                    aria-selected={isLeadSelected}
+                    onKeyDown={(e) => {
+                      if (e.key === " ") { e.preventDefault(); handleSelectOne(lead.id, !isLeadSelected); }
+                    }}
+                    className={[
+                      "transition-colors duration-150 cursor-pointer outline-none",
+                      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50",
+                      isLeadSelected
+                        ? "bg-primary/10 border-l-2 border-l-primary hover:bg-primary/[0.15]"
+                        : "hover:bg-muted/30",
+                    ].join(" ")}
+                  >
+                    <td className="py-2 pl-4 pr-2 text-center" onClick={e => e.stopPropagation()}>
                       <Checkbox 
-                        checked={selectedLeadIds.includes(lead.id)}
+                        checked={isLeadSelected}
                         onCheckedChange={(c) => handleSelectOne(lead.id, !!c)}
+                        tabIndex={-1}
                       />
                     </td>
                     <td className="py-2 px-2">
@@ -232,7 +281,7 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
                       </Badge>
                     </td>
                     {onPreviewLead && (
-                      <td className="py-2 px-4 text-right">
+                      <td className="py-2 px-4 text-right" onClick={e => e.stopPropagation()}>
                         <Button 
                           variant="ghost" 
                           size="icon" 
@@ -247,7 +296,8 @@ export function LeadSelector({ selectedLeadIds, onChange, onHasLeadsChange, onPr
                       </td>
                     )}
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}
