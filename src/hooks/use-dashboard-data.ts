@@ -11,6 +11,7 @@ interface UserDocData {
   firstName?: string;
   gmailConnected?: boolean;
   gmailAuthError?: string | null;
+  onboardingCompleted?: boolean;
   onboarding?: {
     welcomeModalSeen?: boolean;
     hasSeenCelebration?: boolean;
@@ -22,6 +23,7 @@ export interface DashboardData {
   isLoading: boolean;
   error: Error | null;
   firstName: string;
+  onboardingCompleted: boolean;
   gmailConnected: boolean;
   gmailAuthError: string | null;
   metrics: {
@@ -47,10 +49,10 @@ export interface DashboardData {
     isComplete?: boolean;
     steps?: {
       gmailConnected?: boolean;
-      firstLeadCreated?: boolean;
-      firstTemplateCreated?: boolean;
-      firstCampaignCreated?: boolean;
-      firstCampaignLaunched?: boolean;
+      leadCreated?: boolean;
+      templateCreated?: boolean;
+      campaignCreated?: boolean;
+      campaignLaunched?: boolean;
     };
   };
 }
@@ -294,6 +296,7 @@ export function useDashboardData(): DashboardData {
     isLoading,
     error,
     firstName,
+    onboardingCompleted: userDocData?.onboardingCompleted || false,
     gmailConnected: userDocData?.gmailConnected || false,
     gmailAuthError: userDocData?.gmailAuthError || null,
     metrics: {

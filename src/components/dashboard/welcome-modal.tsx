@@ -11,26 +11,26 @@ import { Sparkles, Mail, Users, BarChart3 } from "lucide-react";
 
 export function WelcomeModal() {
   const { user } = useAuth();
-  const { onboarding, isLoading, firstName } = useDashboardData();
+  const { onboardingCompleted, isLoading, firstName } = useDashboardData();
   const [isOpen, setIsOpen] = useState(false);
   
   useEffect(() => {
-    if (!isLoading && user && !onboarding.welcomeModalSeen) {
-      setTimeout(() => setIsOpen(true), 0);
+    if (!isLoading && user && !onboardingCompleted) {
+      setIsOpen(true);
     }
-  }, [isLoading, onboarding.welcomeModalSeen, user]);
+  }, [isLoading, onboardingCompleted, user]);
 
   const handleGetStarted = async () => {
     setIsOpen(false);
     if (user) {
       await setDoc(doc(db, "users", user.uid), {
-        onboarding: { welcomeModalSeen: true }
+        onboardingCompleted: true
       }, { merge: true });
     }
   };
 
-  // Don't render the modal container until we know it's needed
-  if (!isOpen && onboarding.welcomeModalSeen) return null;
+  if (isLoading) return null;
+  if (!isOpen && onboardingCompleted) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
