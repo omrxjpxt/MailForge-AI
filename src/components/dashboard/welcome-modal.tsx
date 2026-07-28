@@ -15,17 +15,23 @@ export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(false);
   
   useEffect(() => {
-    if (!isLoading && user && !onboardingCompleted) {
-      setIsOpen(true);
+    if (!isLoading && user) {
+      if (!onboardingCompleted) {
+        setIsOpen(true);
+      }
     }
   }, [isLoading, onboardingCompleted, user]);
 
   const handleGetStarted = async () => {
     setIsOpen(false);
     if (user) {
-      await setDoc(doc(db, "users", user.uid), {
-        onboardingCompleted: true
-      }, { merge: true });
+      try {
+        await setDoc(doc(db, "users", user.uid), {
+          onboardingCompleted: true
+        }, { merge: true });
+      } catch (err) {
+        console.error("Failed to save onboarding state", err);
+      }
     }
   };
 

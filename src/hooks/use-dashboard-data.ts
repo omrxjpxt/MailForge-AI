@@ -60,7 +60,6 @@ export interface DashboardData {
 export function useDashboardData(): DashboardData {
   const { user } = useAuth();
   
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -70,12 +69,10 @@ export function useDashboardData(): DashboardData {
   const [dailyLimit, setDailyLimit] = useState<number>(50); // Default to Free plan
   const [firstName, setFirstName] = useState("");
   const [userDocData, setUserDocData] = useState<UserDocData | null>(null);
-  const [isUserDocLoaded, setIsUserDocLoaded] = useState(false);
+  const [loadedUid, setLoadedUid] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsLoading(false);
       return;
     }
 
@@ -100,14 +97,13 @@ export function useDashboardData(): DashboardData {
           setFirstName(data.firstName || "");
           setUserDocData(data);
         } else {
-          // Explicitly set an empty object if the document doesn't exist yet
           setUserDocData({} as UserDocData);
         }
-        setIsUserDocLoaded(true);
+        setLoadedUid(user.uid);
       },
       (err) => {
         setError(err);
-        setIsUserDocLoaded(true);
+        setLoadedUid(user.uid);
       }
     );
 
@@ -158,13 +154,8 @@ export function useDashboardData(): DashboardData {
     };
   }, [user]);
 
-  useEffect(() => {
-    if (user && isUserDocLoaded && campaigns && leads && templates && recentHistory) {
-      // Data is mostly loaded when we have the snapshot, even if empty.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsLoading(false);
-    }
-  }, [user, isUserDocLoaded, campaigns, leads, templates, recentHistory]);
+  // Calculate loading state
+  const isLoading = user ? loadedUid !== user.uid : false;
 
   // Derived Metrics
   const todayDateString = new Date().toISOString().split("T")[0];
