@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/firebase/auth";
+import { useConfirm } from "@/components/ui/confirm-modal";
 import { onSnapshot, query, orderBy, where } from "firebase/firestore";
 import { getTemplatesCollection, deleteTemplate, duplicateTemplate, archiveTemplate } from "@/lib/firebase/templates";
 import { EmailTemplate } from "@/types/template";
@@ -24,6 +25,7 @@ export default function TemplatesPage() {
   const { user, loading: authLoading } = useAuth();
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const confirm = useConfirm();
   
   // Filtering & Search
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,15 +108,17 @@ export default function TemplatesPage() {
     }
   };
 
-  const handleDelete = async (templateId: string) => {
+  const handleDelete = (templateId: string) => {
     if (!user) return;
-    if (!window.confirm("Are you sure you want to delete this template?")) return;
-    try {
-      await deleteTemplate(user.uid, templateId);
-      toast.success("Template deleted");
-    } catch {
-      toast.error("Failed to delete template");
-    }
+    confirm({
+      title: "Delete Template?",
+      description: "Are you sure you want to delete this template? This action cannot be undone.",
+      actionButtonText: "Delete Template",
+      onConfirm: async () => {
+        await deleteTemplate(user.uid, templateId);
+      },
+      successToast: "Template deleted successfully."
+    });
   };
 
   if (loading) {

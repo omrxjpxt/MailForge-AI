@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ConfirmProvider } from "@/components/ui/confirm-modal";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -31,9 +32,11 @@ export default function RootLayout({
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-full flex flex-col font-sans">
-        <TooltipProvider>
-          {children}
-        </TooltipProvider>
+        <ConfirmProvider>
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
+        </ConfirmProvider>
         <Toaster />
       </body>
     </html>

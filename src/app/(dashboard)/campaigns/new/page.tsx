@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirm } from "@/components/ui/confirm-modal";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StepperInput } from "@/components/ui/stepper-input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import { db } from "@/lib/firebase/client";
 export default function NewCampaignPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const confirm = useConfirm();
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -165,15 +167,24 @@ export default function NewCampaignPage() {
     const currentSubject = watch(`steps.${stepIndex}.subject`);
     const currentBody = watch(`steps.${stepIndex}.body`);
     
+    const applyTemplate = () => {
+      setValue(`steps.${stepIndex}.subject`, template.subject);
+      setValue(`steps.${stepIndex}.body`, template.body);
+      toast.success(`Template applied to Step ${stepIndex + 1}`);
+    };
+
     if (currentSubject || currentBody) {
-      if (!window.confirm("Replace current content?")) {
-        return;
-      }
+      confirm({
+        title: "Replace Content?",
+        description: "Are you sure you want to replace the current content with this template?",
+        actionButtonText: "Replace",
+        onConfirm: async () => {
+          applyTemplate();
+        }
+      });
+    } else {
+      applyTemplate();
     }
-    
-    setValue(`steps.${stepIndex}.subject`, template.subject);
-    setValue(`steps.${stepIndex}.body`, template.body);
-    toast.success(`Template applied to Step ${stepIndex + 1}`);
   };
 
   const onSubmit = async (data: unknown) => {

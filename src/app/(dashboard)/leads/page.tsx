@@ -5,6 +5,8 @@ import { LeadFilters } from "@/components/leads/lead-filters";
 import { LeadsTable } from "@/components/leads/leads-table";
 import { LeadDialog } from "@/components/leads/lead-dialog";
 import { CsvImportDialog } from "@/components/leads/csv-import-dialog";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useConfirm } from "@/components/ui/confirm-modal";
 import { useAuth } from "@/lib/firebase/auth";
 import { db } from "@/lib/firebase/client";
 import { 
@@ -45,6 +47,7 @@ function LeadsPageContent() {
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>("");
   const [isBulkLoading, setIsBulkLoading] = useState(false);
+  const confirm = useConfirm();
 
   // Dialog states
   const [isLeadDialogOpen, setIsLeadDialogOpen] = useState(false);
@@ -172,19 +175,28 @@ function LeadsPageContent() {
     else setSelectedLeadIds(new Set());
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (!user || selectedLeadIds.size === 0) return;
-    if (!confirm(`Are you sure you want to delete ${selectedLeadIds.size} leads?`)) return;
     
-    setIsBulkLoading(true);
-    try {
-      await bulkDeleteLeads(user.uid, Array.from(selectedLeadIds));
-      toast.success(`Deleted ${selectedLeadIds.size} leads`);
-      setSelectedLeadIds(new Set());
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Bulk delete failed");
-    }
-    setIsBulkLoading(false);
+    const selectedLeadsList = leads.filter(l => selectedLeadIds.has(l.id));
+    const items = selectedLeadsList.map(l => `${l.firstName || ""} ${l.lastName || ""}`.trim() || l.email);
+
+    confirm({
+      title: `Delete ${selectedLeadIds.size} Leads?`,
+      description: `You're about to permanently delete ${selectedLeadIds.size} leads. This action cannot be undone.`,
+      items,
+      actionButtonText: `Delete ${selectedLeadIds.size} Leads`,
+      onConfirm: async () => {
+        setIsBulkLoading(true);
+        try {
+          await bulkDeleteLeads(user.uid, Array.from(selectedLeadIds));
+          setSelectedLeadIds(new Set());
+        } finally {
+          setIsBulkLoading(false);
+        }
+      },
+      successToast: `${selectedLeadIds.size} leads deleted successfully.`
+    });
   };
 
   const handleBulkStatusUpdate = async () => {
@@ -202,16 +214,18 @@ function LeadsPageContent() {
     setIsBulkLoading(false);
   };
 
-  const handleDelete = async (lead: Lead) => {
+  const handleDelete = (lead: Lead) => {
     if (!user) return;
-    if (confirm(`Delete ${lead.firstName} ${lead.lastName}?`)) {
-      try {
+    const name = `${lead.firstName || ""} ${lead.lastName || ""}`.trim() || lead.email;
+    confirm({
+      title: `Delete ${name}?`,
+      description: `You're about to permanently delete this lead. This action cannot be undone.`,
+      actionButtonText: "Delete Lead",
+      onConfirm: async () => {
         await deleteLead(user.uid, lead.id);
-        toast.success("Lead deleted");
-      } catch {
-        toast.error("Failed to delete lead");
-      }
-    }
+      },
+      successToast: "Lead deleted successfully."
+    });
   };
 
   const handleArchive = async (lead: Lead) => {

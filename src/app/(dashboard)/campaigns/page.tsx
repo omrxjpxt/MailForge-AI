@@ -14,12 +14,14 @@ import { db } from "@/lib/firebase/client";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { Campaign } from "@/types/campaign";
 import { toast } from "sonner";
-import { launchCampaign, pauseCampaign, duplicateCampaign, archiveCampaign, deleteCampaign, updateCampaign } from "@/lib/firebase/campaigns";
+import { launchCampaign, pauseCampaign, archiveCampaign, updateCampaign, deleteCampaign, duplicateCampaign } from "@/lib/firebase/campaigns";
+import { useConfirm } from "@/components/ui/confirm-modal";
 
 export default function CampaignsPage() {
   const { user, loading: authLoading } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const confirm = useConfirm();
   const [isEngineRunning, setIsEngineRunning] = useState(false);
 
   useEffect(() => {
@@ -100,17 +102,17 @@ export default function CampaignsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!user) return;
-    if (confirm("Are you sure you want to permanently delete this campaign?")) {
-      try {
+    confirm({
+      title: "Delete Campaign?",
+      description: "Are you sure you want to permanently delete this campaign? This action cannot be undone.",
+      actionButtonText: "Delete Campaign",
+      onConfirm: async () => {
         await deleteCampaign(user.uid, id);
-        toast.success("Campaign deleted");
-      } catch (e: unknown) {
-        const error = e as Error;
-        toast.error(error.message || "Failed to delete campaign");
-      }
-    }
+      },
+      successToast: "Campaign deleted successfully."
+    });
   };
 
   const handleRunEngine = async () => {
