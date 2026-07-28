@@ -519,7 +519,13 @@ export default function NewCampaignPage() {
                 ) : (
                   <Select disabled={isTemplatesLoading} onValueChange={handleTemplateSelect}>
                     <SelectTrigger className="w-[220px]">
-                      <SelectValue placeholder="Use Template..." />
+                      <SelectValue placeholder="Use Template...">
+                        {(value: string | null) => {
+                          if (!value) return null;
+                          const found = templates.find(t => t.id === value);
+                          return found ? found.name : "Use Template...";
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {templates.map(t => (
