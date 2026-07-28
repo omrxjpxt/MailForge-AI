@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     report["1. Setup"] = `Created Lead ${leadRef.id} for User ${uid}`;
 
     // 2. Create and Launch Campaign
-    const campaignData: CampaignInput = {
+    const campaignData: any = {
       name: "E2E Test Campaign",
       description: "Automated E2E Test",
       status: "Running",
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       bounces: 0,
       opens: 0,
       aiPersonalization: { enabled: false, mode: "Basic", fallbackBehavior: "Original" },
-      steps: [{ id: "step-1", subject: "E2E Test Subject", body: "Hello {{firstName}} from E2E test", waitDays: 0 }]
+      steps: [{ stepId: "step-1", subject: "E2E Test Subject", body: "Hello {{firstName}} from E2E test", waitDays: 0, status: "Pending" }]
     };
 
     // We must use admin SDK to bypass client-side db initialization errors in api routes if client is not init'd properly

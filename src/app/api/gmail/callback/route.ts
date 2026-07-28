@@ -50,20 +50,7 @@ export async function GET(request: NextRequest) {
 
     const { tokens } = await oauth2Client.getToken(code);
     
-    console.log("\n=== OAUTH CALLBACK RECEIVED TOKENS ===");
-    console.log("Raw tokens scope string:", tokens.scope);
-    console.log("Full tokens object keys:", Object.keys(tokens));
-    console.log("Does scope include gmail.send?", tokens.scope?.includes("gmail.send"));
-    console.log("=======================================\n");
 
-    // Forensic audit dump
-    try {
-      const fs = require('fs');
-      fs.writeFileSync('oauth_audit_dump.json', JSON.stringify({
-        searchParams: Object.fromEntries(searchParams.entries()),
-        tokens: tokens
-      }, null, 2));
-    } catch (e) {}
 
     // Save to Firestore
     if (tokens.refresh_token) {

@@ -15,7 +15,7 @@ export function Celebration() {
   useEffect(() => {
     if (isLoading || !user || hasFired) return;
 
-    if (onboarding.steps.campaignLaunched && !onboarding.hasSeenCelebration) {
+    if (onboarding?.steps?.campaignLaunched && !onboarding.hasSeenCelebration) {
       // Fire confetti
       const duration = 3 * 1000;
       const animationEnd = Date.now() + duration;

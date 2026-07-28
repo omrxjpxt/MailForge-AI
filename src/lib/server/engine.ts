@@ -237,15 +237,15 @@ export async function processEngineTick(uid: string) {
           try {
             const { credentials } = await oauth2Client.refreshAccessToken();
             const tokenInfo = await oauth2Client.getTokenInfo(credentials.access_token!);
-            console.log(`5. OAuth scopes: ${tokenInfo.scopes.join(", ")}`);
-            console.log(`6. Access token exists? ${!!credentials.access_token}`);
+            console.log(`5. Granted OAuth scopes: ${tokenInfo.scopes.join(", ")}`);
+            console.log(`6. Access token exists: ${!!credentials.access_token}`);
           } catch (e) {
-            console.log(`5. OAuth scopes: Could not retrieve`);
-            console.log(`6. Access token exists? false (Failed to refresh)`);
+            console.log(`5. Granted OAuth scopes: Could not retrieve`);
+            console.log(`6. Access token exists: false (Failed to refresh)`);
           }
-          console.log(`7. Refresh token exists? ${!!userData.gmailRefreshToken}`);
+          console.log(`7. Refresh token exists: ${!!userData.gmailRefreshToken}`);
           
-          console.log(`8. Gmail API request body (first 100 chars):`, raw.substring(0, 100) + "...");
+          console.log(`8. Gmail API request body sent (redacted for security).`);
           
           const res = await gmail.users.messages.send({
             userId: "me",
@@ -309,16 +309,12 @@ export async function processEngineTick(uid: string) {
           console.log(`[Engine TRACE] Email successfully dispatched and recorded!`);
         } catch (error: any) {
            console.log(`9. Gmail API HTTP status: ${error.status || 'Unknown'}`);
-           console.log(`10. Full Google error object:`);
-           console.log(JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+           console.log(`10. Error message:`, error.message);
            console.log(`11. Full stack trace:\n${error.stack}`);
-           console.log(`12. Exact line where execution exits: catch block in engine.ts around line 270`);
+           console.log(`12. Exact line where execution exits: catch block in engine.ts`);
            
            console.log("\nGoogle error code:", error.code);
-           console.log("Google error message:", error.message);
            console.log("Google error reason:", error.errors?.[0]?.reason || "N/A");
-           console.log("Google response body:", JSON.stringify(error.response?.data || "N/A"));
-           console.log("Google headers:", JSON.stringify(error.response?.headers || "N/A"));
            console.log("========================\n");
            
            if (error.message && (error.message.includes("invalid_grant") || error.message.includes("invalid_request"))) {
