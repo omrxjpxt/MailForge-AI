@@ -179,13 +179,19 @@ function LeadsPageContent() {
     if (!user || selectedLeadIds.size === 0) return;
     
     const selectedLeadsList = leads.filter(l => selectedLeadIds.has(l.id));
-    const items = selectedLeadsList.map(l => `${l.firstName || ""} ${l.lastName || ""}`.trim() || l.email);
+    const count = selectedLeadIds.size;
+    const leadItems = selectedLeadsList.map(l => ({
+      name: `${l.firstName || ""} ${l.lastName || ""}`.trim() || "Unknown",
+      email: l.email || undefined,
+    }));
 
     confirm({
-      title: `Delete ${selectedLeadIds.size} Leads?`,
-      description: `You're about to permanently delete ${selectedLeadIds.size} leads. This action cannot be undone.`,
-      items,
-      actionButtonText: `Delete ${selectedLeadIds.size} Leads`,
+      title: count === 1 ? "Delete 1 Lead?" : `Delete ${count} Leads?`,
+      description: count === 1
+        ? "You're about to permanently delete this lead. This action cannot be undone."
+        : `You're about to permanently delete ${count} leads. This action cannot be undone.`,
+      leadItems,
+      actionButtonText: count === 1 ? "Delete Lead" : `Delete ${count} Leads`,
       onConfirm: async () => {
         setIsBulkLoading(true);
         try {
@@ -195,7 +201,7 @@ function LeadsPageContent() {
           setIsBulkLoading(false);
         }
       },
-      successToast: `${selectedLeadIds.size} leads deleted successfully.`
+      successToast: count === 1 ? "Lead deleted successfully." : `${count} leads deleted successfully.`
     });
   };
 
@@ -216,10 +222,11 @@ function LeadsPageContent() {
 
   const handleDelete = (lead: Lead) => {
     if (!user) return;
-    const name = `${lead.firstName || ""} ${lead.lastName || ""}`.trim() || lead.email;
+    const name = `${lead.firstName || ""} ${lead.lastName || ""}`.trim() || "Unknown";
     confirm({
       title: `Delete ${name}?`,
-      description: `You're about to permanently delete this lead. This action cannot be undone.`,
+      description: "You're about to permanently delete this lead. This action cannot be undone.",
+      leadItems: [{ name, email: lead.email || undefined }],
       actionButtonText: "Delete Lead",
       onConfirm: async () => {
         await deleteLead(user.uid, lead.id);
