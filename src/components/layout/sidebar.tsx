@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useAuth } from "@/lib/firebase/auth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const navItems = [
@@ -31,11 +33,10 @@ const navItems = [
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
   const { onboarding, isLoading } = useDashboardData();
+  const { user } = useAuth(); // for debugging
 
   const getNextStep = () => {
-    // Wait for authentication and dashboard data to resolve before determining the tour step
     if (isLoading || !pathname) return null;
-
     if (!onboarding || onboarding.isComplete) return null;
     if (!onboarding.steps?.gmailConnected) return "/settings";
     if (!onboarding.steps?.leadCreated) return "/leads";
@@ -46,6 +47,20 @@ export function Sidebar({ className }: { className?: string }) {
   };
 
   const nextStepHref = getNextStep();
+
+  useEffect(() => {
+    console.log("[TOUR TRACE]", {
+      timestamp: Date.now(),
+      isLoading,
+      uid: user?.uid,
+      onboarding,
+      steps: onboarding?.steps,
+      gmailConnected: onboarding?.steps?.gmailConnected,
+      isComplete: onboarding?.isComplete,
+      pathname,
+      nextStep: nextStepHref
+    });
+  });
 
   return (
     <div className={cn("flex h-full w-64 flex-col border-r border-border bg-sidebar text-sidebar-foreground", className)}>

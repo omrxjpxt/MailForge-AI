@@ -58,7 +58,7 @@ export interface DashboardData {
 }
 
 export function useDashboardData(): DashboardData {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   
   const [error, setError] = useState<Error | null>(null);
   
@@ -155,7 +155,9 @@ export function useDashboardData(): DashboardData {
   }, [user]);
 
   // Calculate loading state
-  const isLoading = user ? loadedUid !== user.uid : false;
+  // 1. Wait for Auth to finish resolving (authLoading)
+  // 2. If user exists, wait until their Firestore user document snapshot arrives (loadedUid === user.uid)
+  const isLoading = authLoading || (user ? loadedUid !== user.uid : false);
 
   // Derived Metrics
   const todayDateString = new Date().toISOString().split("T")[0];
