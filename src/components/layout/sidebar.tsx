@@ -30,9 +30,12 @@ const navItems = [
 
 export function Sidebar({ className }: { className?: string }) {
   const pathname = usePathname();
-  const { onboarding } = useDashboardData();
+  const { onboarding, isLoading } = useDashboardData();
 
   const getNextStep = () => {
+    // Wait for authentication and dashboard data to resolve before determining the tour step
+    if (isLoading || !pathname) return null;
+
     if (!onboarding || onboarding.isComplete) return null;
     if (!onboarding.steps?.gmailConnected) return "/settings";
     if (!onboarding.steps?.leadCreated) return "/leads";
