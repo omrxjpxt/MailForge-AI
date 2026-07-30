@@ -29,9 +29,9 @@ export function Topbar() {
   const router = useRouter();
   const { user } = useAuth();
   const { metrics, isLoading } = useDashboardData();
-  const confirm = useConfirm();
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -46,15 +46,7 @@ export function Topbar() {
   };
 
   const handleLogoutClick = () => {
-    confirm({
-      title: "Sign out?",
-      description: "You'll be signed out of MailForge AI on this device.",
-      actionButtonText: "Sign Out",
-      cancelButtonText: "Cancel",
-      onConfirm: async () => {
-        await handleLogout();
-      }
-    });
+    setShowLogoutModal(true);
   };
 
   return (
@@ -254,6 +246,61 @@ export function Topbar() {
           
           <DialogFooter className="mt-8 hidden">
             <Button type="button" variant="ghost" onClick={() => setShowShortcutsModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Logout Confirmation Modal */}
+      <Dialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
+        <DialogContent className="sm:max-w-[480px] p-8 bg-background/95 backdrop-blur-xl border-border/40 shadow-2xl rounded-[16px]">
+          <DialogHeader className="mb-6 flex flex-row items-center gap-4 space-y-0 text-left">
+            <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+              <LogOut className="h-6 w-6 text-destructive" />
+            </div>
+            <div>
+              <DialogTitle className="text-[20px] font-semibold">Sign out?</DialogTitle>
+              <DialogDescription className="text-muted-foreground mt-1">
+                You'll be signed out of MailForge AI on this device.
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+          
+          <div className="bg-muted/30 rounded-xl p-5 border border-border/50 mb-8">
+            <p className="text-sm font-medium text-foreground mb-3">You will:</p>
+            <ul className="space-y-2.5">
+              <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 mt-1.5 shrink-0" />
+                End your current session
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 mt-1.5 shrink-0" />
+                Return to the login screen
+              </li>
+              <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 mt-1.5 shrink-0" />
+                Keep all campaigns and data safely stored
+              </li>
+            </ul>
+          </div>
+          
+          <DialogFooter className="sm:justify-between w-full gap-3 sm:space-x-0 grid grid-cols-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full h-12 rounded-xl text-base font-medium" 
+              onClick={() => setShowLogoutModal(false)}
+              autoFocus
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              className="w-full h-12 rounded-xl text-base font-medium bg-destructive hover:bg-destructive/90 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 duration-200" 
+              onClick={handleLogout}
+            >
+              Sign Out
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
