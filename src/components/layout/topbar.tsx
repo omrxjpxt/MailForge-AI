@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-import { Menu, User, Settings, CreditCard, HelpCircle, Keyboard, LogOut } from "lucide-react";
+import { Menu, User, Settings, CreditCard, HelpCircle, Keyboard, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,8 +32,10 @@ export function Topbar() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await signOut(auth);
       // Clear session cookie via API
@@ -42,6 +44,8 @@ export function Topbar() {
       router.refresh();
     } catch (error) {
       console.error("Logout error", error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -251,57 +255,73 @@ export function Topbar() {
       </Dialog>
 
       {/* Logout Confirmation Modal */}
-      <Dialog open={showLogoutModal} onOpenChange={setShowLogoutModal}>
-        <DialogContent className="sm:max-w-[480px] p-8 bg-background/95 backdrop-blur-xl border-border/40 shadow-2xl rounded-[16px]">
-          <DialogHeader className="mb-6 flex flex-row items-center gap-4 space-y-0 text-left">
-            <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-              <LogOut className="h-6 w-6 text-destructive" />
+      <Dialog open={showLogoutModal} onOpenChange={(open) => !isLoggingOut && setShowLogoutModal(open)}>
+        <DialogContent 
+          showCloseButton={false}
+          className="sm:max-w-[440px] p-0 bg-[#0A0A0A]/90 backdrop-blur-xl border-border/20 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.05)] rounded-[20px] overflow-hidden duration-150"
+        >
+          <div className="p-6 pb-0">
+            <DialogHeader className="mb-5 flex flex-row items-start gap-4 text-left space-y-0">
+              <div className="h-[44px] w-[44px] rounded-full bg-gradient-to-b from-[#DC2626]/20 to-[#DC2626]/5 shadow-[0_0_24px_rgba(220,38,38,0.15)] flex items-center justify-center shrink-0 ring-1 ring-[#DC2626]/20">
+                <LogOut className="h-5 w-5 text-[#EF4444]" strokeWidth={2.5} />
+              </div>
+              <div className="pt-1">
+                <DialogTitle className="text-[19px] font-semibold tracking-tight">Sign out?</DialogTitle>
+                <DialogDescription className="text-muted-foreground mt-1 text-[15px] leading-snug">
+                  You'll be signed out of your current session.
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+            
+            <div className="bg-[#141414]/50 rounded-2xl p-4 border border-white/5 mb-6">
+              <p className="text-[13px] font-semibold text-foreground/80 mb-2.5 px-0.5 tracking-wide uppercase">Before you go</p>
+              <ul className="space-y-2.5">
+                <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground/60 mt-2 shrink-0" />
+                  Your session will end on this device
+                </li>
+                <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground/60 mt-2 shrink-0" />
+                  You'll return to the login screen
+                </li>
+                <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground/60 mt-2 shrink-0" />
+                  Your data will remain securely stored
+                </li>
+              </ul>
             </div>
-            <div>
-              <DialogTitle className="text-[20px] font-semibold">Sign out?</DialogTitle>
-              <DialogDescription className="text-muted-foreground mt-1">
-                You'll be signed out of MailForge AI on this device.
-              </DialogDescription>
-            </div>
-          </DialogHeader>
-          
-          <div className="bg-muted/30 rounded-xl p-5 border border-border/50 mb-8">
-            <p className="text-sm font-medium text-foreground mb-3">You will:</p>
-            <ul className="space-y-2.5">
-              <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 mt-1.5 shrink-0" />
-                End your current session
-              </li>
-              <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 mt-1.5 shrink-0" />
-                Return to the login screen
-              </li>
-              <li className="flex items-start gap-2.5 text-sm text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 mt-1.5 shrink-0" />
-                Keep all campaigns and data safely stored
-              </li>
-            </ul>
           </div>
           
-          <DialogFooter className="sm:justify-between w-full gap-3 sm:space-x-0 grid grid-cols-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              className="w-full h-12 rounded-xl text-base font-medium" 
-              onClick={() => setShowLogoutModal(false)}
-              autoFocus
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="button" 
-              variant="destructive" 
-              className="w-full h-12 rounded-xl text-base font-medium bg-destructive hover:bg-destructive/90 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 duration-200" 
-              onClick={handleLogout}
-            >
-              Sign Out
-            </Button>
-          </DialogFooter>
+          <div className="px-6 py-5 border-t border-white/5 bg-background/50">
+            <DialogFooter className="sm:justify-between w-full grid grid-cols-2 gap-3 sm:space-x-0">
+              <Button 
+                type="button" 
+                variant="outline" 
+                disabled={isLoggingOut}
+                className="w-full h-12 rounded-xl text-[14px] font-semibold border-white/10 bg-transparent hover:bg-white/5 hover:text-foreground transition-colors" 
+                onClick={() => setShowLogoutModal(false)}
+                autoFocus
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                disabled={isLoggingOut}
+                className="w-full h-12 rounded-xl text-[14px] font-semibold bg-[#DC2626] hover:bg-[#B91C1C] text-white transition-colors border border-transparent shadow-[0_2px_8px_rgba(220,38,38,0.25)] active:bg-[#991B1B]" 
+                onClick={handleLogout}
+              >
+                {isLoggingOut ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Logging out...</span>
+                  </div>
+                ) : (
+                  "Log out"
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </header>
