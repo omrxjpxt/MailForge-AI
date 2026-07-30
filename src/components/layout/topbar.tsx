@@ -206,8 +206,8 @@ export function Topbar() {
           
           <div className="bg-muted/50 rounded-xl p-4 text-center border border-border/50 mt-2">
             <p className="text-sm text-muted-foreground mb-1">Need immediate assistance?</p>
-            <a href="mailto:support@mailforge.ai" className="text-primary font-medium hover:underline">
-              support@mailforge.ai
+            <a href="mailto:gangwarom973@gmail.com" className="text-primary font-medium hover:underline">
+              gangwarom973@gmail.com
             </a>
           </div>
           
