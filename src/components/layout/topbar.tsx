@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 
 import { Menu, User, Settings, CreditCard, HelpCircle, Keyboard, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,11 +21,17 @@ import { GlobalSearch } from "./global-search";
 import { NotificationDropdown } from "./notification-dropdown";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Sidebar } from "./sidebar";
+import { useConfirm } from "@/components/ui/confirm-modal";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Search, MoveUp, MoveDown, CornerDownLeft, X } from "lucide-react";
 
 export function Topbar() {
   const router = useRouter();
   const { user } = useAuth();
   const { metrics, isLoading } = useDashboardData();
+  const confirm = useConfirm();
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -36,6 +43,18 @@ export function Topbar() {
     } catch (error) {
       console.error("Logout error", error);
     }
+  };
+
+  const handleLogoutClick = () => {
+    confirm({
+      title: "Sign out?",
+      description: "You'll be signed out of MailForge AI on this device.",
+      actionButtonText: "Sign Out",
+      cancelButtonText: "Cancel",
+      onConfirm: async () => {
+        await handleLogout();
+      }
+    });
   };
 
   return (
@@ -127,48 +146,43 @@ export function Topbar() {
             <div className="p-1 space-y-0.5">
               <DropdownMenuItem 
                 onClick={() => router.push("/settings")} 
-                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-all duration-200 hover:bg-accent focus:bg-accent"
+                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-colors duration-200 hover:bg-accent focus:bg-accent"
               >
-                <User className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground" />
-                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground">Profile</span>
+                <Settings className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground" />
+                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground">Settings</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => router.push("/settings")} 
-                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-all duration-200 hover:bg-accent focus:bg-accent"
+                onClick={() => router.push("/settings?tab=billing")} 
+                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-colors duration-200 hover:bg-accent focus:bg-accent"
               >
-                <Settings className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground" />
-                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground">Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => router.push("/settings")} 
-                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-all duration-200 hover:bg-accent focus:bg-accent"
-              >
-                <CreditCard className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground" />
-                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground">Billing</span>
+                <CreditCard className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground" />
+                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground">Billing</span>
               </DropdownMenuItem>
             </div>
 
             <DropdownMenuSeparator className="bg-border/50 mx-1" />
             <div className="p-1 space-y-0.5">
               <DropdownMenuItem 
-                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-all duration-200 hover:bg-accent focus:bg-accent"
+                onClick={() => setShowHelpModal(true)}
+                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-colors duration-200 hover:bg-accent focus:bg-accent"
               >
-                <HelpCircle className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground" />
-                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground">Help</span>
+                <HelpCircle className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground" />
+                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground">Help</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-all duration-200 hover:bg-accent focus:bg-accent"
+                onClick={() => setShowShortcutsModal(true)}
+                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-colors duration-200 hover:bg-accent focus:bg-accent"
               >
-                <Keyboard className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground" />
-                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-hover:brightness-110 group-focus:text-foreground">Keyboard Shortcuts</span>
+                <Keyboard className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground" />
+                <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground group-focus:text-foreground">Keyboard Shortcuts</span>
               </DropdownMenuItem>
             </div>
 
             <DropdownMenuSeparator className="bg-border/50 mx-1" />
             <div className="p-1">
               <DropdownMenuItem 
-                onClick={handleLogout}
-                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-all duration-200 hover:bg-destructive/10 focus:bg-destructive/10"
+                onClick={handleLogoutClick}
+                className="group flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 outline-none transition-colors duration-200 hover:bg-destructive/10 focus:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-destructive group-focus:text-destructive" />
                 <span className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-destructive group-focus:text-destructive">Log Out</span>
@@ -177,6 +191,72 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      {/* Help Modal */}
+      <Dialog open={showHelpModal} onOpenChange={setShowHelpModal}>
+        <DialogContent className="sm:max-w-md p-6 bg-background/95 backdrop-blur-xl border-border/40 shadow-2xl rounded-2xl">
+          <DialogHeader className="mb-4">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4 mx-auto">
+              <HelpCircle className="h-6 w-6 text-primary" />
+            </div>
+            <DialogTitle className="text-xl text-center">Help Center</DialogTitle>
+            <DialogDescription className="text-center pt-2">
+              Documentation and support will be available soon.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="bg-muted/50 rounded-xl p-4 text-center border border-border/50 mt-2">
+            <p className="text-sm text-muted-foreground mb-1">Need immediate assistance?</p>
+            <a href="mailto:support@mailforge.ai" className="text-primary font-medium hover:underline">
+              support@mailforge.ai
+            </a>
+          </div>
+          
+          <DialogFooter className="sm:justify-center mt-6">
+            <Button type="button" variant="outline" className="w-full rounded-xl" onClick={() => setShowHelpModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Keyboard Shortcuts Modal */}
+      <Dialog open={showShortcutsModal} onOpenChange={setShowShortcutsModal}>
+        <DialogContent className="sm:max-w-md p-6 bg-background/95 backdrop-blur-xl border-border/40 shadow-2xl rounded-2xl">
+          <DialogHeader className="mb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-secondary/50 flex items-center justify-center">
+                <Keyboard className="h-5 w-5 text-foreground" />
+              </div>
+              <DialogTitle className="text-xl">Keyboard Shortcuts</DialogTitle>
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-3">
+            {[
+              { keys: ["⌘K", "Ctrl+K"], desc: "Global search" },
+              { keys: ["Esc"], desc: "Close dialogs & menus" },
+              { keys: ["↑", "↓"], desc: "Navigate menus" },
+              { keys: ["Enter"], desc: "Confirm selection" },
+              { keys: ["?"], desc: "Open shortcuts" },
+            ].map((shortcut, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
+                <span className="text-sm font-medium text-muted-foreground">{shortcut.desc}</span>
+                <div className="flex items-center gap-1.5">
+                  {shortcut.keys.map((k, j) => (
+                    <span key={j} className="inline-flex h-6 min-w-6 px-1.5 items-center justify-center rounded bg-muted border border-border/50 text-[11px] font-mono font-medium text-foreground">
+                      {k}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <DialogFooter className="mt-8 hidden">
+            <Button type="button" variant="ghost" onClick={() => setShowShortcutsModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
