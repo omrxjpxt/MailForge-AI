@@ -34,6 +34,13 @@ export function Topbar() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  const getInitials = (name?: string | null) => {
+    if (!name || !name.trim()) return null;
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -95,15 +102,14 @@ export function Topbar() {
             <Button 
               variant="ghost" 
               size="icon" 
-              className="rounded-full h-9 w-9 border border-border/50 shadow-sm transition-all duration-200 hover:scale-[1.03] hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background bg-background relative"
+              className="rounded-full h-9 w-9 p-0 border border-border/40 shadow-sm transition-all duration-150 hover:border-border/80 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background bg-background"
             >
               <Avatar className="h-full w-full">
-                <AvatarImage src={user?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} alt={user?.displayName || "User"} />
-                <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
-                  {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "JD"}
+                <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || "User"} className="object-cover transition-opacity duration-300" />
+                <AvatarFallback className="bg-[#1A1A1A] text-white font-medium text-[13px]">
+                  {getInitials(user?.displayName) || <User className="h-4 w-4" />}
                 </AvatarFallback>
               </Avatar>
-              <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-green-500 shadow-sm"></span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent 
@@ -113,21 +119,18 @@ export function Topbar() {
           >
             <div className="flex flex-col space-y-3 p-3 pb-4">
               <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar className="h-12 w-12 border border-border/50 shadow-sm">
-                    <AvatarImage src={user?.photoURL || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                      {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "JD"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-background bg-green-500 shadow-sm"></span>
-                </div>
+                <Avatar className="h-12 w-12 border border-border/40 shadow-sm">
+                  <AvatarImage src={user?.photoURL || undefined} className="object-cover transition-opacity duration-300" />
+                  <AvatarFallback className="bg-[#1A1A1A] text-white font-medium text-[16px]">
+                    {getInitials(user?.displayName) || <User className="h-6 w-6" />}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex flex-col space-y-0.5 min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground truncate">
                     {user?.displayName || "Om Gangwar"}
                   </p>
                   <p className="text-xs text-muted-foreground truncate font-medium">
-                    {user?.email || "omgangster9@gmail.com"}
+                    {user?.email || "gangwarom973@gmail.com"}
                   </p>
                 </div>
               </div>
