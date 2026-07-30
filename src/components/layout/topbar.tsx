@@ -258,69 +258,51 @@ export function Topbar() {
       <Dialog open={showLogoutModal} onOpenChange={(open) => !isLoggingOut && setShowLogoutModal(open)}>
         <DialogContent 
           showCloseButton={false}
-          className="sm:max-w-[440px] p-0 bg-[#0A0A0A]/90 backdrop-blur-xl border-border/20 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.05)] rounded-[20px] overflow-hidden duration-150"
+          className="sm:max-w-[420px] p-0 bg-[#0C0C0C] border border-white/[0.06] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.04)] rounded-2xl overflow-hidden"
         >
-          <div className="p-6 pb-0">
-            <DialogHeader className="mb-5 flex flex-row items-start gap-4 text-left space-y-0">
-              <div className="h-[44px] w-[44px] rounded-full bg-gradient-to-b from-[#DC2626]/20 to-[#DC2626]/5 shadow-[0_0_24px_rgba(220,38,38,0.15)] flex items-center justify-center shrink-0 ring-1 ring-[#DC2626]/20">
-                <LogOut className="h-5 w-5 text-[#EF4444]" strokeWidth={2.5} />
+          {/* Header */}
+          <div className="px-6 pt-6 pb-5">
+            <div className="flex items-start gap-3.5">
+              <div className="h-10 w-10 rounded-xl bg-[#1A0A0A] flex items-center justify-center shrink-0 ring-1 ring-[#7F1D1D]/40">
+                <LogOut className="h-[18px] w-[18px] text-[#F87171]" strokeWidth={2} />
               </div>
-              <div className="pt-1">
-                <DialogTitle className="text-[19px] font-semibold tracking-tight">Sign out?</DialogTitle>
-                <DialogDescription className="text-muted-foreground mt-1 text-[15px] leading-snug">
-                  You'll be signed out of your current session.
+              <div className="pt-0.5">
+                <DialogTitle className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+                  Sign out?
+                </DialogTitle>
+                <DialogDescription className="mt-1.5 text-[14px] leading-[1.5] text-muted-foreground/80">
+                  You&apos;ll be signed out of your current session. Your campaigns, templates, leads and account data will remain safely stored.
                 </DialogDescription>
               </div>
-            </DialogHeader>
-            
-            <div className="bg-[#141414]/50 rounded-2xl p-4 border border-white/5 mb-6">
-              <p className="text-[13px] font-semibold text-foreground/80 mb-2.5 px-0.5 tracking-wide uppercase">Before you go</p>
-              <ul className="space-y-2.5">
-                <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                  <span className="h-1 w-1 rounded-full bg-muted-foreground/60 mt-2 shrink-0" />
-                  Your session will end on this device
-                </li>
-                <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                  <span className="h-1 w-1 rounded-full bg-muted-foreground/60 mt-2 shrink-0" />
-                  You'll return to the login screen
-                </li>
-                <li className="flex items-start gap-2.5 text-[14px] text-muted-foreground">
-                  <span className="h-1 w-1 rounded-full bg-muted-foreground/60 mt-2 shrink-0" />
-                  Your data will remain securely stored
-                </li>
-              </ul>
             </div>
           </div>
-          
-          <div className="px-6 py-5 border-t border-white/5 bg-background/50">
-            <DialogFooter className="sm:justify-between w-full grid grid-cols-2 gap-3 sm:space-x-0">
-              <Button 
-                type="button" 
-                variant="outline" 
-                disabled={isLoggingOut}
-                className="w-full h-12 rounded-xl text-[14px] font-semibold border-white/10 bg-transparent hover:bg-white/5 hover:text-foreground transition-colors" 
-                onClick={() => setShowLogoutModal(false)}
-                autoFocus
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="button" 
-                variant="destructive" 
-                disabled={isLoggingOut}
-                className="w-full h-12 rounded-xl text-[14px] font-semibold bg-[#DC2626] hover:bg-[#B91C1C] text-white transition-colors border border-transparent shadow-[0_2px_8px_rgba(220,38,38,0.25)] active:bg-[#991B1B]" 
-                onClick={handleLogout}
-              >
-                {isLoggingOut ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Logging out...</span>
-                  </div>
-                ) : (
-                  "Log out"
-                )}
-              </Button>
-            </DialogFooter>
+
+          {/* Footer */}
+          <div className="px-6 pb-5 border-t border-white/[0.06] pt-4 flex items-center gap-2.5">
+            <Button 
+              type="button" 
+              disabled={isLoggingOut}
+              className="flex-1 h-[42px] rounded-lg text-[13px] font-medium bg-white/[0.06] border border-white/[0.08] text-foreground/80 hover:bg-white/[0.1] hover:text-foreground transition-colors duration-150" 
+              onClick={() => setShowLogoutModal(false)}
+              autoFocus
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              disabled={isLoggingOut}
+              className="flex-1 h-[42px] rounded-lg text-[13px] font-medium bg-[#7F1D1D] hover:bg-[#991B1B] text-white/90 hover:text-white transition-colors duration-150 border border-[#991B1B]/50" 
+              onClick={handleLogout}
+            >
+              {isLoggingOut ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Signing out...</span>
+                </div>
+              ) : (
+                "Log out"
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
