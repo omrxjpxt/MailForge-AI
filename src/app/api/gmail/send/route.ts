@@ -3,14 +3,15 @@ import { google } from "googleapis";
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
 
 function createMimeMessage(to: string, subject: string, body: string) {
+  const htmlBody = body.replace(/\n/g, "<br>");
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
   const messageParts = [
     `To: ${to}`,
     `Subject: ${utf8Subject}`,
     "MIME-Version: 1.0",
-    "Content-Type: text/plain; charset=utf-8",
+    "Content-Type: text/html; charset=utf-8",
     "",
-    body,
+    htmlBody,
   ];
   const message = messageParts.join("\n");
   return Buffer.from(message).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

@@ -226,7 +226,14 @@ export async function processEngineTick(uid: string) {
         try {
           const subject = personalizeText(baseSubject, lead);
           const body = personalizeText(baseBody, lead);
-          const raw = createMimeMessage(lead.email, subject, body);
+          
+          // Format text body to HTML and append tracking pixel
+          const formattedBody = body.replace(/\n/g, "<br>");
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+          const trackingUrl = `${appUrl}/api/track/open?userId=${uid}&campaignId=${campDoc.id}&leadId=${progress.leadId}&stepId=${node.stepId}`;
+          const htmlBody = `${formattedBody}<img src="${trackingUrl}" width="1" height="1" style="display:none;" alt="" />`;
+
+          const raw = createMimeMessage(lead.email, subject, htmlBody);
 
           console.log("\n========================");
           console.log(`1. Campaign ID: ${campDoc.id}`);
@@ -365,15 +372,15 @@ function personalizeText(text: string, lead: Lead) {
   return result;
 }
 
-function createMimeMessage(to: string, subject: string, body: string) {
+function createMimeMessage(to: string, subject: string, htmlBody: string) {
   const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString("base64")}?=`;
   const messageParts = [
     `To: ${to}`,
     `Subject: ${utf8Subject}`,
     "MIME-Version: 1.0",
-    "Content-Type: text/plain; charset=utf-8",
+    "Content-Type: text/html; charset=utf-8",
     "",
-    body,
+    htmlBody,
   ];
   const message = messageParts.join("\n");
   return Buffer.from(message).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
