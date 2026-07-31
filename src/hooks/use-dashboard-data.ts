@@ -176,7 +176,7 @@ export function useDashboardData(): DashboardData {
       emailsSentToday += (camp.dailyEmailsSent || 0);
     }
     totalEmailsSent += (camp.emailsSent || 0);
-    totalDelivered += ((camp.emailsSent || 0) - (camp.bounces || 0));
+    totalDelivered += (camp.emailsDelivered || camp.emailsSent || 0);
     totalOpened += (camp.opens || 0);
     totalReplied += (camp.replies || 0);
     totalBounces += (camp.bounces || 0);
@@ -188,8 +188,8 @@ export function useDashboardData(): DashboardData {
 
   const pendingLeads = leads.filter(l => l.status === "New").length;
   
-  const avgOpenRate = totalEmailsSent > 0 ? ((totalOpened / totalEmailsSent) * 100) : 0;
-  const avgReplyRate = totalEmailsSent > 0 ? ((totalReplied / totalEmailsSent) * 100) : 0;
+  const avgOpenRate = totalDelivered > 0 ? Math.min((totalOpened / totalDelivered) * 100, 100) : 0;
+  const avgReplyRate = totalDelivered > 0 ? Math.min((totalReplied / totalDelivered) * 100, 100) : 0;
   const bounceRate = totalEmailsSent > 0 ? ((totalBounces / totalEmailsSent) * 100) : 0;
 
   // Recent Campaigns (top 5)

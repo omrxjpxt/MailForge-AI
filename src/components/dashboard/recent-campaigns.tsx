@@ -79,7 +79,7 @@ export function RecentCampaigns({ campaigns }: RecentCampaignsProps) {
                       {(campaign.totalLeads ?? campaign.leadIds?.length ?? 0).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">
-                      {campaign.emailsSent > 0 ? ((campaign.opens / campaign.emailsSent) * 100).toFixed(1) + '%' : '0%'}
+                      {(campaign.emailsDelivered || 0) > 0 ? (((campaign.opens || 0) / (campaign.emailsDelivered || 0)) * 100).toFixed(1) + '%' : '0%'}
                     </TableCell>
                     <TableCell className="text-right text-muted-foreground">{campaign.replies}</TableCell>
                     <TableCell className="text-right">

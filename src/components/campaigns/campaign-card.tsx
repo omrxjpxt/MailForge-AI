@@ -35,12 +35,12 @@ export function CampaignCard({
     ? Math.round((campaign.emailsSent / safeTotalLeads) * 100)
     : 0;
 
-  const openRate = campaign.emailsDelivered > 0 
-    ? (campaign.opens / campaign.emailsDelivered) * 100 
+  const openRate = (campaign.emailsDelivered || 0) > 0 
+    ? ((campaign.opens || 0) / (campaign.emailsDelivered || 0)) * 100 
     : 0;
     
-  const replyRate = campaign.emailsDelivered > 0 
-    ? (campaign.replies / campaign.emailsDelivered) * 100 
+  const replyRate = (campaign.emailsDelivered || 0) > 0 
+    ? ((campaign.replies || 0) / (campaign.emailsDelivered || 0)) * 100 
     : 0;
 
   const isActive = campaign.status === "Running" || campaign.status === "Scheduled";

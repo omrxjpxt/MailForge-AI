@@ -56,8 +56,8 @@ export function ArchivedTable({ campaigns, onDelete, onUnarchive }: ArchivedTabl
             </TableRow>
           ) : (
             archivedCampaigns.map((campaign) => {
-              const openRate = campaign.emailsDelivered > 0 ? ((campaign.opens / campaign.emailsDelivered) * 100).toFixed(1) + "%" : "0%";
-              const replyRate = campaign.emailsDelivered > 0 ? ((campaign.replies / campaign.emailsDelivered) * 100).toFixed(1) + "%" : "0%";
+              const openRate = (campaign.emailsDelivered || 0) > 0 ? (((campaign.opens || 0) / (campaign.emailsDelivered || 0)) * 100).toFixed(1) + "%" : "0%";
+              const replyRate = (campaign.emailsDelivered || 0) > 0 ? (((campaign.replies || 0) / (campaign.emailsDelivered || 0)) * 100).toFixed(1) + "%" : "0%";
 
               return (
                 <TableRow key={campaign.id} className="border-border/50">

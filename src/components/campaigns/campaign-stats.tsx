@@ -13,10 +13,10 @@ export function CampaignStats({ campaigns }: CampaignStatsProps) {
   const totalLeads = campaigns.reduce((acc, c) => acc + (c.totalLeads ?? c.leadIds?.length ?? 0), 0);
   const emailsSent = campaigns.reduce((acc, c) => acc + c.emailsSent, 0);
   
-  const totalDelivered = campaigns.reduce((acc, c) => acc + c.emailsDelivered, 0);
-  const totalOpens = campaigns.reduce((acc, c) => acc + c.opens, 0);
+  const totalDelivered = campaigns.reduce((acc, c) => acc + (c.emailsDelivered || c.emailsSent || 0), 0);
+  const totalOpens = campaigns.reduce((acc, c) => acc + (c.opens || 0), 0);
   
-  const avgOpenRate = totalDelivered > 0 ? (totalOpens / totalDelivered) * 100 : 0;
+  const avgOpenRate = totalDelivered > 0 ? Math.min((totalOpens / totalDelivered) * 100, 100) : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
