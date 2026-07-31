@@ -274,6 +274,7 @@ export async function processEngineTick(uid: string) {
           
           batch.update(campDoc.ref, {
             emailsSent: FieldValue.increment(1),
+            emailsDelivered: FieldValue.increment(1),
             dailyEmailsSent: FieldValue.increment(1),
             updatedAt: Date.now()
           });

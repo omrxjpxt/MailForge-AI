@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
   const leadId = searchParams.get("leadId");
   const stepId = searchParams.get("stepId");
 
+  console.log(`[Tracking] HIT /api/track/open`);
+  console.log(`[Tracking] userId=${userId}, campaignId=${campaignId}, leadId=${leadId}, stepId=${stepId}`);
+
   if (userId && campaignId && leadId && stepId) {
     try {
       // Find the specific email in history
@@ -29,6 +32,8 @@ export async function GET(request: NextRequest) {
       if (!historySnap.empty) {
         const docRef = historySnap.docs[0].ref;
         const data = historySnap.docs[0].data();
+
+        console.log(`[Tracking] Email history found. Already opened? ${data.opened}`);
 
         // Only process if it hasn't been opened yet (Unique Opens tracking)
         if (!data.opened) {
@@ -45,22 +50,28 @@ export async function GET(request: NextRequest) {
           batch.update(campaignRef, {
             opens: FieldValue.increment(1)
           });
+          console.log(`[Tracking] Batch queued increment for campaign.opens`);
 
           // 3. Update Lead status conditionally (don't overwrite 'Replied' or something further along)
           const leadRef = adminDb.collection(`users/${userId}/leads`).doc(leadId);
           const leadSnap = await leadRef.get();
           if (leadSnap.exists) {
             const leadData = leadSnap.data();
+            console.log(`[Tracking] Lead status: ${leadData?.status}`);
             if (leadData?.status === "Contacted") {
               batch.update(leadRef, {
                 status: "Opened",
                 lastContactedAt: Date.now()
               });
+              console.log(`[Tracking] Batch queued Lead status to Opened`);
             }
           }
 
           await batch.commit();
+          console.log(`[Tracking] Batch commit SUCCESS.`);
         }
+      } else {
+        console.log(`[Tracking] Email history NOT found for campaignId=${campaignId}, leadId=${leadId}`);
       }
     } catch (error) {
       console.error("[Tracking] Error processing open event:", error);
