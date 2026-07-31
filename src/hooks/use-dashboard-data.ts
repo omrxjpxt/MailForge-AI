@@ -6,6 +6,7 @@ import { Campaign } from "@/types/campaign";
 import { Lead } from "@/types/lead";
 import { EmailHistory } from "@/types/history";
 import { EmailTemplate } from "@/types/template";
+import { aggregateCampaignMetrics } from "@/lib/analytics";
 
 interface UserDocData {
   firstName?: string;
@@ -162,35 +163,16 @@ export function useDashboardData(): DashboardData {
   // Derived Metrics
   const todayDateString = new Date().toISOString().split("T")[0];
   
-  let emailsSentToday = 0;
-  let totalEmailsSent = 0;
-  let totalDelivered = 0; // Approximate with sent minus bounces for now
-  let totalOpened = 0;
-  let totalReplied = 0;
-  let totalBounces = 0;
-  
-  let activeCampaigns = 0;
+  const aggregated = aggregateCampaignMetrics(campaigns);
 
+  let emailsSentToday = 0;
   campaigns.forEach(camp => {
     if (camp.dailyEmailsSentDate === todayDateString) {
       emailsSentToday += (camp.dailyEmailsSent || 0);
     }
-    totalEmailsSent += (camp.emailsSent || 0);
-    totalDelivered += (camp.emailsDelivered || camp.emailsSent || 0);
-    totalOpened += (camp.opens || 0);
-    totalReplied += (camp.replies || 0);
-    totalBounces += (camp.bounces || 0);
-    
-    if (camp.status === "Running") {
-      activeCampaigns++;
-    }
   });
 
   const pendingLeads = leads.filter(l => l.status === "New").length;
-  
-  const avgOpenRate = totalDelivered > 0 ? Math.min((totalOpened / totalDelivered) * 100, 100) : 0;
-  const avgReplyRate = totalDelivered > 0 ? Math.min((totalReplied / totalDelivered) * 100, 100) : 0;
-  const bounceRate = totalEmailsSent > 0 ? ((totalBounces / totalEmailsSent) * 100) : 0;
 
   // Recent Campaigns (top 5)
   const recentCampaigns = [...campaigns]
@@ -296,15 +278,15 @@ export function useDashboardData(): DashboardData {
       emailsSentToday,
       dailyLimit,
       pendingLeads,
-      totalCampaigns: campaigns.length,
-      activeCampaigns,
-      totalEmailsSent,
-      avgOpenRate,
-      avgReplyRate,
-      bounceRate,
-      totalDelivered,
-      totalOpened,
-      totalReplied
+      totalCampaigns: aggregated.totalCampaigns,
+      activeCampaigns: aggregated.activeCampaigns,
+      totalEmailsSent: aggregated.totalEmailsSent,
+      totalDelivered: aggregated.totalDelivered,
+      totalOpened: aggregated.totalOpened,
+      totalReplied: aggregated.totalReplied,
+      avgOpenRate: aggregated.avgOpenRate,
+      avgReplyRate: aggregated.avgReplyRate,
+      bounceRate: aggregated.bounceRate,
     },
     recentCampaigns,
     latestChanges,

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PerformanceChart } from "@/components/dashboard/performance-chart";
 import { ArrowUpRight, ArrowDownRight, Minus, Loader2 } from "lucide-react";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { getFunnelMetrics } from "@/lib/analytics";
 
 export default function AnalyticsPage() {
   const { isLoading, metrics, performanceData } = useDashboardData();
@@ -18,9 +19,7 @@ export default function AnalyticsPage() {
 
   // Calculate percentages for the funnel
   const sent = metrics.totalEmailsSent;
-  const deliveredPerc = sent > 0 ? (metrics.totalDelivered / sent) * 100 : 0;
-  const openedPerc = sent > 0 ? (metrics.totalOpened / sent) * 100 : 0;
-  const repliedPerc = sent > 0 ? (metrics.totalReplied / sent) * 100 : 0;
+  const funnel = getFunnelMetrics(metrics as any);
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -73,10 +72,10 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent className="px-6">
             <div className="space-y-6">
-              <FunnelStep label="Sent" count={sent} percentage={sent > 0 ? 100 : 0} color="bg-blue-500" />
-              <FunnelStep label="Delivered" count={metrics.totalDelivered} percentage={deliveredPerc} color="bg-indigo-500" />
-              <FunnelStep label="Opened" count={metrics.totalOpened} percentage={openedPerc} color="bg-purple-500" />
-              <FunnelStep label="Replied" count={metrics.totalReplied} percentage={repliedPerc} color="bg-primary" />
+              <FunnelStep label="Sent" count={sent} percentage={funnel.sentPerc} color="bg-blue-500" />
+              <FunnelStep label="Delivered" count={metrics.totalDelivered} percentage={funnel.deliveredPerc} color="bg-indigo-500" />
+              <FunnelStep label="Opened" count={metrics.totalOpened} percentage={funnel.openedPerc} color="bg-purple-500" />
+              <FunnelStep label="Replied" count={metrics.totalReplied} percentage={funnel.repliedPerc} color="bg-primary" />
             </div>
           </CardContent>
         </Card>

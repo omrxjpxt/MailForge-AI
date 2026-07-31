@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Campaign } from "@/types/campaign";
 import { format } from "date-fns";
+import { getCampaignMetrics } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Trash2, Play } from "lucide-react";
 import {
@@ -56,8 +57,10 @@ export function ArchivedTable({ campaigns, onDelete, onUnarchive }: ArchivedTabl
             </TableRow>
           ) : (
             archivedCampaigns.map((campaign) => {
-              const openRate = (campaign.emailsDelivered || 0) > 0 ? (((campaign.opens || 0) / (campaign.emailsDelivered || 0)) * 100).toFixed(1) + "%" : "0%";
-              const replyRate = (campaign.emailsDelivered || 0) > 0 ? (((campaign.replies || 0) / (campaign.emailsDelivered || 0)) * 100).toFixed(1) + "%" : "0%";
+              const metrics = getCampaignMetrics(campaign);
+              const openRate = metrics.openRate.toFixed(1) + "%";
+              const replyRate = metrics.replyRate.toFixed(1) + "%";
+              const totalLeads = metrics.totalLeads;
 
               return (
                 <TableRow key={campaign.id} className="border-border/50">
@@ -69,7 +72,7 @@ export function ArchivedTable({ campaigns, onDelete, onUnarchive }: ArchivedTabl
                       {campaign.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{campaign.totalLeads ?? campaign.leadIds?.length ?? 0}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{totalLeads}</TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">{openRate}</TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground">{replyRate}</TableCell>
                   <TableCell className="text-right text-sm text-muted-foreground font-mono text-xs">

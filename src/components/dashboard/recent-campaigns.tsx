@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Mail, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Campaign } from "@/types/campaign";
+import { getCampaignMetrics } from "@/lib/analytics";
 import { DashboardData } from "@/hooks/use-dashboard-data";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -48,40 +50,44 @@ export function RecentCampaigns({ campaigns }: RecentCampaignsProps) {
               <TableBody>
                 {campaigns.map((campaign) => (
                   <TableRow key={campaign.id} className="border-border/50 group">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className={`h-8 w-2 rounded-full bg-blue-500`} />
-                        <div className="flex flex-col">
-                          <span className="font-medium">{campaign.name}</span>
-                          <span className="text-xs text-muted-foreground">Created {new Date(campaign.createdAt).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline" 
-                        className={`
-                          ${campaign.status === 'Running' ? 'text-green-500 border-green-500/20 bg-green-500/10' : ''}
-                          ${campaign.status === 'Paused' || campaign.status === 'Draft' ? 'text-muted-foreground border-border bg-muted/50' : ''}
-                          ${campaign.status === 'Completed' ? 'text-blue-500 border-blue-500/20 bg-blue-500/10' : ''}
-                          font-normal px-2 py-0 h-6 text-xs gap-1.5 rounded-full
-                        `}
-                      >
-                        <div className={`h-1.5 w-1.5 rounded-full ${
-                          campaign.status === 'Running' ? 'bg-green-500' :
-                          campaign.status === 'Paused' || campaign.status === 'Draft' ? 'bg-muted-foreground' :
-                          'bg-blue-500'
-                        }`} />
-                        {campaign.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {(campaign.totalLeads ?? campaign.leadIds?.length ?? 0).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {(campaign.emailsDelivered || 0) > 0 ? (((campaign.opens || 0) / (campaign.emailsDelivered || 0)) * 100).toFixed(1) + '%' : '0%'}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">{campaign.replies}</TableCell>
+                    {(() => {
+                      const metrics = getCampaignMetrics(campaign);
+                      return (
+                        <>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className={`h-8 w-2 rounded-full bg-blue-500`} />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{campaign.name}</span>
+                                <span className="text-xs text-muted-foreground">Created {new Date(campaign.createdAt).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="outline" 
+                              className={`
+                                ${campaign.status === 'Running' ? 'text-green-500 border-green-500/20 bg-green-500/10' : ''}
+                                ${campaign.status === 'Paused' || campaign.status === 'Draft' ? 'text-muted-foreground border-border bg-muted/50' : ''}
+                                ${campaign.status === 'Completed' ? 'text-blue-500 border-blue-500/20 bg-blue-500/10' : ''}
+                                font-normal px-2 py-0 h-6 text-xs gap-1.5 rounded-full
+                              `}
+                            >
+                              <div className={`h-1.5 w-1.5 rounded-full ${
+                                campaign.status === 'Running' ? 'bg-green-500' :
+                                campaign.status === 'Paused' || campaign.status === 'Draft' ? 'bg-muted-foreground' :
+                                'bg-blue-500'
+                              }`} />
+                              {campaign.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground">
+                            {metrics.totalLeads.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground">
+                            {metrics.openRate.toFixed(1) + '%'}
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground">{metrics.replies}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" asChild>
                         <Link href="/campaigns">
@@ -90,6 +96,9 @@ export function RecentCampaigns({ campaigns }: RecentCampaignsProps) {
                         </Link>
                       </Button>
                     </TableCell>
+                        </>
+                      );
+                    })()}
                   </TableRow>
                 ))}
               </TableBody>

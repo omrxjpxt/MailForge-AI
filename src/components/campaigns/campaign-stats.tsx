@@ -1,6 +1,7 @@
 "use client";
 
 import { Users, Mailbox, Activity, CheckCircle2 } from "lucide-react";
+import { aggregateCampaignMetrics } from "@/lib/analytics";
 import { Campaign } from "@/types/campaign";
 
 interface CampaignStatsProps {
@@ -8,15 +9,11 @@ interface CampaignStatsProps {
 }
 
 export function CampaignStats({ campaigns }: CampaignStatsProps) {
-  const activeCampaigns = campaigns.filter(c => c.status === "Running" || c.status === "Scheduled").length;
-  
+  const aggregated = aggregateCampaignMetrics(campaigns);
+  const activeCampaigns = aggregated.activeCampaigns;
   const totalLeads = campaigns.reduce((acc, c) => acc + (c.totalLeads ?? c.leadIds?.length ?? 0), 0);
-  const emailsSent = campaigns.reduce((acc, c) => acc + c.emailsSent, 0);
-  
-  const totalDelivered = campaigns.reduce((acc, c) => acc + (c.emailsDelivered || c.emailsSent || 0), 0);
-  const totalOpens = campaigns.reduce((acc, c) => acc + (c.opens || 0), 0);
-  
-  const avgOpenRate = totalDelivered > 0 ? Math.min((totalOpens / totalDelivered) * 100, 100) : 0;
+  const emailsSent = aggregated.totalEmailsSent;
+  const avgOpenRate = aggregated.avgOpenRate;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">

@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Campaign } from "@/types/campaign";
-
+import { getCampaignMetrics } from "@/lib/analytics";
 interface CampaignCardProps {
   campaign: Campaign;
   onLaunch?: (id: string) => void;
@@ -30,19 +30,11 @@ export function CampaignCard({
   onArchive,
   onDelete
 }: CampaignCardProps) {
-  const safeTotalLeads = campaign.totalLeads ?? campaign.leadIds?.length ?? 0;
-  const percentage = safeTotalLeads > 0 
-    ? Math.round((campaign.emailsSent / safeTotalLeads) * 100)
-    : 0;
-
-  const openRate = (campaign.emailsDelivered || 0) > 0 
-    ? ((campaign.opens || 0) / (campaign.emailsDelivered || 0)) * 100 
-    : 0;
-    
-  const replyRate = (campaign.emailsDelivered || 0) > 0 
-    ? ((campaign.replies || 0) / (campaign.emailsDelivered || 0)) * 100 
-    : 0;
-
+  const metrics = getCampaignMetrics(campaign);
+  const percentage = metrics.progress;
+  const openRate = metrics.openRate;
+  const replyRate = metrics.replyRate;
+  const safeTotalLeads = metrics.totalLeads;
   const isActive = campaign.status === "Running" || campaign.status === "Scheduled";
   const icon = campaign.emailsSent > 0 ? "zap" : "sparkles"; // just a visual heuristic
 
