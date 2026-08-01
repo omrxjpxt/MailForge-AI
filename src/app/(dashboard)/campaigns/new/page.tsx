@@ -25,6 +25,8 @@ import { Lead } from "@/types/lead";
 import { EmailTemplate } from "@/types/template";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { AIGenerationModal } from "@/components/campaigns/ai-generation-modal";
+import { GeneratedEmail } from "@/types/ai-generation";
 
 export default function NewCampaignPage() {
   const { user, loading: authLoading } = useAuth();
@@ -34,6 +36,7 @@ export default function NewCampaignPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasLeads, setHasLeads] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   
   // Preview Modal State
   const [previewLead, setPreviewLead] = useState<Lead | null>(null);
@@ -125,31 +128,24 @@ export default function NewCampaignPage() {
   
   const handlePrev = () => setStep(s => Math.max(1, s - 1));
 
-  const handleGenerateAI = async () => {
-    setIsGenerating(true);
-    try {
-      // Create a prompt summarizing the campaign
-      const prompt = `Write a cold outreach sequence for a campaign named "${watch("name")}". Include a subject and body.`;
-      
-      const res = await fetch("/api/templates/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
+  const handleAIGenerated = (emails: GeneratedEmail[]) => {
+    if (emails.length > 1) {
+      remove();
+      emails.forEach((email, i) => {
+        append({
+          stepId: email.id || i.toString(),
+          subject: email.subject,
+          body: email.body,
+          waitDays: i === 0 ? 0 : 3
+        });
       });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to generate");
-      
-      // Update first step with AI generation
-      setValue("steps.0.subject", data.template.subject);
-      setValue("steps.0.body", data.template.body);
-      
-      toast.success("AI generated campaign sequence!");
-    } catch (error: unknown) {
-      const err = error as Error;
-      toast.error(err.message || "Failed to generate");
-    } finally {
-      setIsGenerating(false);
+      setActiveTabId(emails[0].id || "0");
+    } else {
+      const stepIndex = steps.findIndex((s: any) => s.stepId === activeTabId || s.id === activeTabId) !== -1 
+        ? steps.findIndex((s: any) => s.stepId === activeTabId || s.id === activeTabId) 
+        : 0;
+      setValue(`steps.${stepIndex}.subject`, emails[0].subject);
+      setValue(`steps.${stepIndex}.body`, emails[0].body);
     }
   };
 
@@ -545,10 +541,9 @@ export default function NewCampaignPage() {
                 <Button 
                   variant="secondary" 
                   className="gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                  onClick={handleGenerateAI}
-                  disabled={isGenerating}
+                  onClick={(e) => { e.preventDefault(); setIsAIModalOpen(true); }}
                 >
-                  {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  <Sparkles className="h-4 w-4" />
                   Generate AI
                 </Button>
               </div>
@@ -668,6 +663,13 @@ export default function NewCampaignPage() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <AIGenerationModal 
+        isOpen={isAIModalOpen}
+        onClose={() => setIsAIModalOpen(false)}
+        selectedLeads={[]}
+        onApply={handleAIGenerated}
+      />
     </div>
   );
 }

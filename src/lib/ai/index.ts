@@ -114,3 +114,38 @@ export async function generateWithFallback(
   const finalErr = lastError as Record<string, unknown>;
   throw new AIError(handleAIError(lastError), (finalErr?.status as number) || 500);
 }
+
+export async function generateStreamWithFallback(
+  contents: string | Array<string | object>, 
+  config?: GenerateContentConfig
+) {
+  const modelsToTry = cachedWorkingModel 
+    ? [cachedWorkingModel, ...PREFERRED_MODELS.filter(m => m !== cachedWorkingModel)] 
+    : PREFERRED_MODELS;
+
+  let lastError: unknown;
+
+  for (const model of modelsToTry) {
+    try {
+      const responseStream = await ai.models.generateContentStream({
+        model: model,
+        contents,
+        config
+      });
+      
+      cachedWorkingModel = model;
+      return responseStream;
+    } catch (error: unknown) {
+      lastError = error;
+      const err = error as Record<string, unknown>;
+      if (err?.status === 404) {
+        console.warn(`Model ${model} returned 404 for stream, falling back...`);
+        continue;
+      }
+      throw new AIError(handleAIError(error), (err?.status as number) || 500);
+    }
+  }
+
+  const finalErr = lastError as Record<string, unknown>;
+  throw new AIError(handleAIError(lastError), (finalErr?.status as number) || 500);
+}

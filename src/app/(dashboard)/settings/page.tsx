@@ -9,12 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Mail, Shield, User, Bell, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, Shield, User, Bell, AlertCircle, Loader2, CheckCircle2, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { auth, db } from "@/lib/firebase/client";
 import { doc, onSnapshot, updateDoc, setDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BrandProfileSettings } from "@/components/dashboard/brand-profile-settings";
 
 function SettingsContent() {
   const [isSaving, setIsSaving] = useState(false);
@@ -225,11 +226,16 @@ function SettingsContent() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="mb-4 bg-muted/50 w-full sm:w-auto grid grid-cols-2 sm:flex">
           <TabsTrigger value="account" className="rounded-sm gap-2"><User className="h-4 w-4" /> Account</TabsTrigger>
+          <TabsTrigger value="brand" className="rounded-sm gap-2"><Briefcase className="h-4 w-4" /> Brand Profile</TabsTrigger>
           <TabsTrigger value="integrations" className="rounded-sm gap-2"><Mail className="h-4 w-4" /> Integrations</TabsTrigger>
           <TabsTrigger value="billing" className="rounded-sm gap-2"><Shield className="h-4 w-4" /> Billing</TabsTrigger>
           <TabsTrigger value="notifications" className="rounded-sm gap-2"><Bell className="h-4 w-4" /> Notifications</TabsTrigger>
         </TabsList>
         
+        <TabsContent value="brand" className="mt-0 space-y-6">
+          <BrandProfileSettings />
+        </TabsContent>
+
         <TabsContent value="account" className="mt-0 space-y-6">
           <Card className="bg-card">
             <CardHeader>
