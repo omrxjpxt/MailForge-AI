@@ -400,7 +400,7 @@ export default function NewCampaignPage() {
                       control={control}
                       name="aiPersonalization.mode"
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value || "Basic"}>
+                        <Select onValueChange={field.onChange} value={field.value || "Basic"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select mode" />
                           </SelectTrigger>
@@ -419,7 +419,7 @@ export default function NewCampaignPage() {
                       control={control}
                       name="aiPersonalization.fallbackBehavior"
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || "Original"}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select fallback" />
                           </SelectTrigger>
