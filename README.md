@@ -195,9 +195,9 @@ Contributions are what make the open-source community such an amazing place to l
 
 Full-Stack Developer passionate about building AI-powered SaaS products, modern web applications, and developer tools.
 
-- 🌐 Portfolio: https://your-portfolio.com
+- 🌐 Portfolio: https://omportfolio3d.vercel.app/
 - 💼 LinkedIn: https://linkedin.com/in/om-gangwar-58315a271
-- 📧 Email: your@email.com
+- 📧 Email: gangwarom973@gmail.com
 ## 📄 License
 
 Distributed under the MIT License.
