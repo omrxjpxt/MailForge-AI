@@ -189,11 +189,11 @@ Contributions are what make the open-source community such an amazing place to l
 5. Open a Pull Request
 
 ---
-## 👨‍💻 Author
+## About the Author
 
-**Om Gangwar**
+Hi, I'm **Om Gangwar**, a Full-Stack Developer passionate about building AI-powered SaaS products.
 
-Full-Stack Developer passionate about building AI-powered SaaS products, modern web applications, and developer tools.
+If you like this project, feel free to connect:
 
 - 🌐 Portfolio: https://omportfolio3d.vercel.app/
 - 💼 LinkedIn: https://linkedin.com/in/om-gangwar-58315a271
