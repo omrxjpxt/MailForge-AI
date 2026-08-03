@@ -189,7 +189,15 @@ Contributions are what make the open-source community such an amazing place to l
 5. Open a Pull Request
 
 ---
+## 👨‍💻 Author
 
+**Om Gangwar**
+
+Full-Stack Developer passionate about building AI-powered SaaS products, modern web applications, and developer tools.
+
+- 🌐 Portfolio: https://your-portfolio.com
+- 💼 LinkedIn: https://linkedin.com/in/om-gangwar-58315a271
+- 📧 Email: your@email.com
 ## 📄 License
 
 Distributed under the MIT License.
