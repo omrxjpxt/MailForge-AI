@@ -78,18 +78,6 @@ MailForge AI is an advanced, AI-powered cold email outreach platform designed to
 
 ---
 
-## 📸 Screenshots
-
-![Dashboard Placeholder](https://via.placeholder.com/800x450.png?text=Dashboard)
-
-![Campaign Builder Placeholder](https://via.placeholder.com/800x450.png?text=Campaign+Builder)
-
-![AI Email Generator Placeholder](https://via.placeholder.com/800x450.png?text=AI+Email+Generator)
-
-![Analytics Placeholder](https://via.placeholder.com/800x450.png?text=Analytics)
-
----
-
 ## 🚀 Getting Started
 
 Follow these instructions to get a local copy up and running.
