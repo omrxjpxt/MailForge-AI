@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License" />
 </p>
 
-# MailForge AI
+# MailForge AI 
 
 MailForge AI is an advanced, AI-powered cold email outreach platform designed to streamline and elevate your email marketing efforts. It empowers users to generate highly personalized emails, efficiently manage leads, create and execute multi-step campaigns, send emails directly through Gmail, automate follow-ups, and track comprehensive campaign analytics to optimize engagement and conversion rates.
 
